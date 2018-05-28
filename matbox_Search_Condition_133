@@ -1,0 +1,119 @@
+{
+	"dt": {
+		"alias": "日期",
+		"type": "text",
+		"option": [
+			"<?=date('Y-m-d'); ?>",
+			"<?=date('Y-m-d',strtotime('yesterday')); ?>",
+			"<?=date('Y-m-d',strtotime('-2 days')); ?>"
+		],
+		"default": "<?=date('Y-m-d',strtotime('-1 days')); ?>"
+	},
+
+	"app_name": {
+		"alias": "App Name",
+		"type": "text",
+		"option": [
+			"<不限>"
+		],
+		"default": "<不限>"
+	},
+
+	"package_name": {
+		"alias": "Package Name",
+		"type": "text",
+		"option": [
+			"<不限>",
+			"com.dotc.ime.latin.flash",
+			"com.xime.latin.lite",
+			"mobi.wifi.toolbox",
+			"mobi.supo.cleaner",
+			"com.supo.security",
+			"mobi.yellow.booster",
+			"mobi.supo.optimizer"
+		],
+		"default": "<不限>"
+	},
+
+	"app_ver": {
+		"alias": "App Version",
+		"type": "text",
+		"option": [
+			"<总和>",
+			"<不限>"
+		],
+		"default": "<总和>"
+	},
+
+	"geo": {
+		"alias": "Country",
+		"type": "text",
+		"option": [
+			"<总和>",
+			"<不限>"
+		],
+		"default": "<总和>"
+	},
+
+	"media_source": {
+		"alias": "Media_Source",
+		"type": "text",
+		"option": [
+			"<不限>",
+			"facebook ",
+			"adwords"
+		],
+		"default": "<不限>"
+	},
+
+	"campaign": {
+		"alias": "Campaign",
+		"type": "text",
+		"option": [
+			"<总和>",
+			"<不限>"
+		],
+		"default": "<不限>"
+	},
+
+	"category": {
+		"alias": "Category",
+		"type": "text",
+		"option": [
+			"<总和>",
+			"<不限>"
+		],
+		"default": "<不限>"
+	},
+
+	"action": {
+		"alias": "Action",
+		"type": "text",
+		"option": [
+			"<总和>",
+			"<不限>"
+		],
+		"default": "<不限>"
+	},
+
+	"page": {
+		"alias": "page",
+		"type": "text",
+		"option": [
+			"0",
+			"1",
+			"2"
+		],
+		"default": "0"
+	},
+
+	"rows": {
+		"alias": "rows",
+		"type": "text",
+		"option": [
+			"1000",
+			"2000"
+		],
+		"default": "500"
+	}
+}

@@ -1,0 +1,63 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+create temporary function toUnixTimestamp as 'com.avazu.dc.hive.udf.UDFToUnixTimestamp';
+
+
+use avazurepttmp;
+
+set pt=<?=date('Y-m-d-H', $worker_pt);?>;
+set one=<?=date('Y-m-d-H', $worker_pt-1*86400);?>;
+set dt=<?=date('Y-m-d', $worker_pt);?>;
+
+select
+    toUnixTimestamp('${hiveconf:dt}', 'yyyy-MM-dd') as mbox_pt,
+    t.hour as hour,
+    t.app as app,
+    t.package_name as package_name,
+    t.app_ver as app_ver,
+	t.geo as geo,
+	t.media_source as media_source,
+	t.campaign as campaign,
+    t.category as category,
+	t.action as action,
+
+	sum(if((case when t.pt='${hiveconf:pt}' then t.users end) is not null,case when t.pt='${hiveconf:pt}' then t.users end,0)) as users_today,
+	sum(if((case when t.pt='${hiveconf:pt}' then t.numbers end) is not null,case when t.pt='${hiveconf:pt}' then t.numbers end,0)) as numbers_today,
+	sum(if((case when t.pt='${hiveconf:one}' then t.users end) is not null,case when t.pt='${hiveconf:one}' then t.users end,0)) as users_yesterday,
+	sum(if((case when t.pt='${hiveconf:one}' then t.numbers end) is not null,case when t.pt='${hiveconf:one}' then t.numbers end,0)) as numbers_yesterday
+	from (
+
+	select
+	pt,
+	hour,
+	date_time,
+	app,
+	package_name,
+	app_ver,
+	geo,
+	media_source,
+	campaign,
+	category,
+	action,
+	users,
+	numbers from t_app_user_action_gaid_v2_tmp where pt ='${hiveconf:pt}'
+
+	union all
+
+	select
+	pt,
+	hour,
+	date_time,
+	app,
+	package_name,
+	app_ver,
+	geo,
+	media_source,
+	campaign,
+	category,
+	action,
+	users,
+	numbers from t_app_user_action_gaid_v2_tmp where pt ='${hiveconf:one}'
+	) t
+
+	group by hour,app,package_name,app_ver,geo,media_source,campaign,category,action;

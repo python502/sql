@@ -1,0 +1,255 @@
+<?
+$cond_dt              = $mbox_cond_preproc($mbox_cond['dt']);
+$cond_app_name        = $mbox_cond_preproc($mbox_cond['app_name']);
+$cond_package_name    = $mbox_cond_preproc($mbox_cond['package_name']);
+$cond_app_ver         = $mbox_cond_preproc($mbox_cond['app_ver']);
+$cond_geo             = $mbox_cond_preproc($mbox_cond['geo']);
+$cond_media_source    = $mbox_cond_preproc($mbox_cond['media_source']);
+$cond_campaign        = $mbox_cond_preproc($mbox_cond['campaign']);
+$cond_category        = $mbox_cond_preproc($mbox_cond['category']);
+$cond_action          = $mbox_cond_preproc($mbox_cond['action']);
+$cond_page            = $mbox_cond['page'];
+$cond_rows            = $mbox_cond['rows'];
+?>
+
+select
+    <? if (!$cond_dt['aggr']): ?>
+	FROM_UNIXTIME(mbox_pt, '%Y-%m-%d') as '日期',
+    <? endif; ?>
+    hour as 'Hour',
+
+	<? if (!$cond_app_name['aggr']): ?>
+    app as 'App Name',
+    <? endif; ?>
+
+    <? if (!$cond_package_name['aggr']): ?>
+    package_name as 'Package Name',
+    <? endif; ?>
+
+    <? if (!$cond_app_ver['aggr']): ?>
+    app_ver as 'APP Version',
+    <? endif; ?>
+
+    <? if (!$cond_geo['aggr']): ?>
+    geo as 'Country',
+    <? endif; ?>
+
+	<? if (!$cond_media_source['aggr']): ?>
+    media_source as 'Media_Source',
+    <? endif; ?>
+
+	<? if (!$cond_campaign['aggr']): ?>
+    campaign as 'Campaign',
+    <? endif; ?>
+
+	<? if (!$cond_category['aggr']): ?>
+    category as 'Category',
+    <? endif; ?>
+
+	<? if (!$cond_action['aggr']): ?>
+    action as 'Action',
+    <? endif; ?>
+
+	sum(users_today) as 用户数,
+    sum(numbers_today) as '打点数',
+    case
+        when sum(users_yesterday) > 0 then concat(round((sum(users_today)-sum(users_yesterday))*100/sum(users_yesterday), 2), '%')
+        else '-'
+    end as '用户数环比率',
+    case
+        when sum(numbers_yesterday) > 0 then concat(round((sum(numbers_today)-sum(numbers_yesterday))*100/sum(numbers_yesterday), 2), '%')
+        else '-'
+    end as '打点数环比率'
+
+
+from t_matbox_app_count_daily
+<?
+/* where */
+    $where=array();
+
+    $sub_where=array();
+    foreach ($cond_dt['values'] as $val) {
+        $sub_where[]=" (mbox_pt=".strtotime(date('Ymd',strtotime($val))).") ";
+    }
+    foreach ($cond_dt['range_values'] as $val) {
+        $sub_where[]=" (mbox_pt>=".strtotime(date('Ymd',strtotime($val['first'])))." AND mbox_pt<=".strtotime(date('Ymd',strtotime($val['last']))).") ";
+    }
+    $where[]=" (".implode(' OR ', $sub_where).") ";
+
+    if (!empty($cond_app_name['values'])) {
+        $sub_where=array();
+        foreach ($cond_app_name['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" app='$val' ";
+            } else {
+                $sub_where[]=" app like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_package_name['values'])) {
+        $sub_where=array();
+        foreach ($cond_package_name['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" package_name='$val' ";
+            } else {
+                $sub_where[]=" package_name like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_app_ver['values'])) {
+        $sub_where=array();
+        foreach ($cond_app_ver['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" app_ver='$val' ";
+            } else {
+                $sub_where[]=" app_ver like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+
+    if (!empty($cond_geo['values'])) {
+        $sub_where=array();
+        foreach ($cond_geo['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" geo='$val' ";
+            } else {
+                $sub_where[]=" geo like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_media_source['values'])) {
+        $sub_where=array();
+        foreach ($cond_media_source['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" media_source='$val' ";
+            } else {
+                $sub_where[]=" media_source like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_campaign['values'])) {
+        $sub_where=array();
+        foreach ($cond_campaign['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" campaign='$val' ";
+            } else {
+                $sub_where[]=" campaign like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+
+    if (!empty($cond_category['values'])) {
+        $sub_where=array();
+        foreach ($cond_category['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" category='$val' ";
+            } else {
+                $sub_where[]=" category like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+
+    if (!empty($cond_action['values'])) {
+        $sub_where=array();
+        foreach ($cond_action['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" action='$val' ";
+            } else {
+                $sub_where[]=" action like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+    echo " where ".implode(" AND ", $where)." ";
+
+/* group by */
+    $group_by = array();
+
+	$group_by[] = 'hour';
+
+    if (!$cond_dt['aggr']) {
+        $group_by[] = 'mbox_pt';
+    }
+
+	if (!$cond_app_name['aggr']) {
+	$group_by[] = 'app';
+    }
+
+    if (!$cond_package_name['aggr']) {
+        $group_by[] = 'package_name';
+    }
+
+    if (!$cond_app_ver['aggr']) {
+        $group_by[] = 'app_ver';
+    }
+
+    if (!$cond_geo['aggr']) {
+        $group_by[] = 'geo';
+    }
+
+    if (!$cond_media_source['aggr']) {
+        $group_by[] = 'media_source';
+    }
+
+    if (!$cond_campaign['aggr']) {
+        $group_by[] = 'campaign';
+    }
+
+    if (!$cond_category['aggr']) {
+        $group_by[] = 'category';
+    }
+
+    if (!$cond_action['aggr']) {
+        $group_by[] = 'action';
+    }
+
+    if (!empty($group_by)) {
+        echo " group by ".implode(",", $group_by)." ";
+    }
+?>
+/* order by */
+order by
+<? if (!$cond_dt['aggr'] && (count($cond_dt['values']) > 1 || !empty($cond_dt['range_values']))): ?>
+    mbox_pt, sum(users_today) DESC DESC
+<? else: ?>
+    sum(users_today) DESC
+<? endif; ?>
+limit <?=$cond_page*$cond_rows?>, <?=$cond_rows?>;

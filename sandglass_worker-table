@@ -1,0 +1,23 @@
+{
+    "name": "t_matbox_app_count_daily",
+    "fields": [
+        {"name": "hour",                   "type": "varchar(2)"},
+        {"name": "app",                    "type": "varchar(50)"},
+        {"name": "package_name",           "type": "varchar(50)"},
+        {"name": "app_ver",                "type": "varchar(20)"},
+        {"name": "geo",                    "type": "varchar(2)"},
+        {"name": "media_source",           "type": "varchar(20)"},
+        {"name": "campaign",               "type": "varchar(20)"},
+        {"name": "category",               "type": "varchar(20)"},
+        {"name": "action",                 "type": "varchar(20)"},
+        {"name": "users_today",            "type": "int(20)"},
+        {"name": "numbers_today",          "type": "int(20)"},
+        {"name": "users_yesterday",        "type": "int(20)"},
+        {"name": "numbers_yesterday",      "type": "int(20)"}
+    ],
+    "indexes": [
+        {"name": "package_name"},
+        {"name": "app_ver"},
+        {"name": "geo"}
+    ]
+}
