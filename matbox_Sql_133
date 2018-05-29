@@ -35,7 +35,7 @@ select
     <? endif; ?>
 
 	<? if (!$cond_media_source['aggr']): ?>
-    media_source as 'Media_Source',
+    media_source as 'Media Source',
     <? endif; ?>
 
 	<? if (!$cond_campaign['aggr']): ?>
