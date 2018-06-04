@@ -248,7 +248,7 @@ from t_matbox_app_count_daily
 /* order by */
 order by
 <? if (!$cond_dt['aggr'] && (count($cond_dt['values']) > 1 || !empty($cond_dt['range_values']))): ?>
-    mbox_pt, sum(users_today) DESC DESC
+    mbox_pt, sum(users_today) DESC
 <? else: ?>
     sum(users_today) DESC
 <? endif; ?>
