@@ -51,7 +51,7 @@ select
     <? endif; ?>
 
 	sum(users_today) as 用户数,
-    sum(numbers_today) as '打点数',
+    sum(numbers_today) as '事件数',
     case
         when sum(users_yesterday) > 0 then concat(round((sum(users_today)-sum(users_yesterday))*100/sum(users_yesterday), 2), '%')
         else '-'
@@ -59,7 +59,7 @@ select
     case
         when sum(numbers_yesterday) > 0 then concat(round((sum(numbers_today)-sum(numbers_yesterday))*100/sum(numbers_yesterday), 2), '%')
         else '-'
-    end as '打点数环比率'
+    end as '事件数环比率'
 
 
 from t_matbox_app_count_daily
