@@ -1,0 +1,43 @@
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+create temporary function toUnixTimestamp as 'com.avazu.dc.hive.udf.UDFToUnixTimestamp';
+create temporary function fromUnixTimestamp as  'com.avazu.dc.hive.udf.UDFFromUnixTimestamp';
+
+set hive.auto.convert.join=false;
+
+set pt=<?=date('Y-m-d-H', $worker_pt);?>;
+set dt=<?=date('Y-m-d', $worker_pt);?>;
+
+SELECT
+      toUnixTimestamp('${hiveconf:dt}', 'yyyy-MM-dd') as mbox_pt
+      , a.package_name
+      , a.app_ver
+      , b.geo
+      , a.act
+      , count(distinct a.gaid) as uv
+      , count(a.gaid) as pv
+      , sum(a.et-a.st) as period
+FROM
+    (SELECT
+        pt
+      , package_name
+      , app_ver
+      , act
+      , st
+      , et
+      , gaid
+    FROM avazu.t_app_tracking_ac_rt_log
+    where pt BETWEEN '${hiveconf:dt}-00' AND '${hiveconf:pt}'
+    ) as a
+    left join
+    (SELECT
+        gaid
+      , geo
+    FROM avazurepttmp.t_app_user_gaid_v2_log
+    where pt='${hiveconf:dt}'
+    ) as b
+    on  a.gaid = b.gaid
+    GROUP BY
+        a.package_name
+      , a.app_ver
+      , b.geo
+      , a.act

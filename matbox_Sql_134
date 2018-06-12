@@ -1,0 +1,151 @@
+<?
+$cond_dt              = $mbox_cond_preproc($mbox_cond['dt']);
+$cond_package_name    = $mbox_cond_preproc($mbox_cond['package_name']);
+$cond_app_ver         = $mbox_cond_preproc($mbox_cond['app_ver']);
+$cond_geo             = $mbox_cond_preproc($mbox_cond['geo']);
+$cond_act             = $mbox_cond_preproc($mbox_cond['act']);
+$cond_page            = $mbox_cond['page'];
+$cond_rows            = $mbox_cond['rows'];
+?>
+
+select
+    <? if (!$cond_dt['aggr']): ?>
+	FROM_UNIXTIME(mbox_pt, '%Y-%m-%d') as '日期',
+    <? endif; ?>
+
+    <? if (!$cond_package_name['aggr']): ?>
+    package_name as 'Package Name',
+    <? endif; ?>
+
+    <? if (!$cond_app_ver['aggr']): ?>
+    app_ver as 'APP Version',
+    <? endif; ?>
+
+    <? if (!$cond_geo['aggr']): ?>
+    geo as 'Country',
+    <? endif; ?>
+
+	<? if (!$cond_act['aggr']): ?>
+    act as 'Act',
+    <? endif; ?>
+
+	sum(uv) as '独立访问量',
+    sum(pv) as '页面访问量',
+    case
+        when sum(pv) > 0 then concat(round(sum(period))*100/sum(pv), 2), '%')
+        else '-'
+    end as '平均访问时长',
+
+from t_matbox_app_gaid_daily
+<?
+/* where */
+    $where=array();
+
+    $sub_where=array();
+    foreach ($cond_dt['values'] as $val) {
+        $sub_where[]=" (mbox_pt=".strtotime(date('Ymd',strtotime($val))).") ";
+    }
+    foreach ($cond_dt['range_values'] as $val) {
+        $sub_where[]=" (mbox_pt>=".strtotime(date('Ymd',strtotime($val['first'])))." AND mbox_pt<=".strtotime(date('Ymd',strtotime($val['last']))).") ";
+    }
+    $where[]=" (".implode(' OR ', $sub_where).") ";
+
+
+    if (!empty($cond_package_name['values'])) {
+        $sub_where=array();
+        foreach ($cond_package_name['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" package_name='$val' ";
+            } else {
+                $sub_where[]=" package_name like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_app_ver['values'])) {
+        $sub_where=array();
+        foreach ($cond_app_ver['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" app_ver='$val' ";
+            } else {
+                $sub_where[]=" app_ver like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+
+    if (!empty($cond_geo['values'])) {
+        $sub_where=array();
+        foreach ($cond_geo['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" geo='$val' ";
+            } else {
+                $sub_where[]=" geo like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    if (!empty($cond_act['values'])) {
+        $sub_where=array();
+        foreach ($cond_act['values'] as $val) {
+            if ($val[0] == '@') {
+                $val = ltrim($val,'@');
+                $sub_where[]=" act='$val' ";
+            } else {
+                $sub_where[]=" act like '%".$val."%'";
+            }
+        }
+        if (!empty($sub_where)) {
+            $where[] = " (".implode(" OR ", $sub_where).") ";
+        }
+    }
+
+    echo " where ".implode(" AND ", $where)." ";
+
+/* group by */
+    $group_by = array();
+
+    if (!$cond_dt['aggr']) {
+        $group_by[] = 'mbox_pt';
+    }
+
+    if (!$cond_package_name['aggr']) {
+        $group_by[] = 'package_name';
+    }
+
+    if (!$cond_app_ver['aggr']) {
+        $group_by[] = 'app_ver';
+    }
+
+    if (!$cond_geo['aggr']) {
+        $group_by[] = 'geo';
+    }
+
+	if (!$cond_act['aggr']) {
+	$group_by[] = 'act';
+    }
+
+    if (!empty($group_by)) {
+        echo " group by ".implode(",", $group_by)." ";
+    }
+?>
+/* order by */
+order by
+<? if (!$cond_dt['aggr'] && (count($cond_dt['values']) > 1 || !empty($cond_dt['range_values']))): ?>
+    mbox_pt, sum(uv) DESC
+<? else: ?>
+    sum(uv) DESC
+<? endif; ?>
+limit <?=$cond_page*$cond_rows?>, <?=$cond_rows?>;
