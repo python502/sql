@@ -1,0 +1,54 @@
+use avazu;
+
+set hive.merge.mapredfiles=true;
+
+set pt=<?=date('Y-m-d-H', $worker_pt);?>;
+
+select 'date',
+'adid',
+'sourceid',
+'country',
+'DAU',
+'Impressions',
+'Conversion',
+'Revenue',
+'Paid'
+ from avazu.t_header;
+
+SELECT
+        a.pt
+      , a.adid
+      , a.sourceid
+      , a.country
+      , count(distinct a.deviceid)
+      , count(distinct a.trackid)
+      , sum(b.advpayout)
+      , sum(b.payout)
+FROM
+    (SELECT
+        pt
+      , adid
+      , sourceid
+      , country
+      , deviceid
+      , trackid
+    FROM t_apx_imp_detail_log
+    where pt='${hiveconf:pt}'
+    ) as a
+    join
+    (SELECT
+        pt
+      , adid
+      , sourceid
+      , country
+      , payout
+      , advpayout
+    FROM t_apx_convert_detail_log
+    where pt='${hiveconf:pt}'
+    ) as b
+    on  a.adid = b.adid and a.sourceid = b.sourceid and a.country = b.country
+    GROUP BY
+        a.pt
+      , a.adid
+      , a.sourceid
+      , a.country
