@@ -1,0 +1,64 @@
+use avazu;
+
+set hive.merge.mapredfiles=true;
+
+set pt=<?=date('Y-m-d-H', $worker_pt);?>;
+
+select 'date',
+'adid',
+'sourceid',
+'country',
+'Real_conv',
+'Pre_conv',
+'Post_local_conv',
+'Post_server_conv',
+'Pre_installing_conv',
+'Real_revenue',
+'Pre_revenue',
+'Post_local_revenue',
+'Post_server_revenue',
+'Pre_installing_revenue'
+ from avazu.t_header;
+
+SELECT
+        a.pt
+      , a.adid
+      , a.sourceid
+      , a.country
+      , sum(if(a.preclk=0,1,0))
+      , sum(if(a.preclk=1,1,0))
+      , sum(if(a.preclk=2,1,0))
+      , sum(if(a.preclk=3,1,0))
+      , sum(if(a.preclk=4,1,0))
+
+      , sum(if(a.preclk=0,b.advpayout,0))
+      , sum(if(a.preclk=1,b.advpayout,0))
+      , sum(if(a.preclk=2,b.advpayout,0))
+      , sum(if(a.preclk=3,b.advpayout,0))
+      , sum(if(a.preclk=4,b.advpayout,0))
+FROM
+    (SELECT
+        pt
+      , adid
+      , sourceid
+      , country
+      , preclk
+    FROM t_appwall_preclick_detail_log
+    where pt='${hiveconf:pt}'
+    ) as a
+    join
+    (SELECT
+        pt
+      , adid
+      , sourceid
+      , country
+      , advpayout
+    FROM t_apx_convert_detail_log
+    where pt='${hiveconf:pt}'
+    ) as b
+    on  a.adid = b.adid and a.sourceid = b.sourceid and a.country = b.country
+    GROUP BY
+        a.pt
+      , a.adid
+      , a.sourceid
+      , a.country
