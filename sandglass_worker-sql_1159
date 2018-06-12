@@ -51,4 +51,4 @@ FROM
         a.pt
       , a.adid
       , a.sourceid
-      , a.country
+      , a.country;
