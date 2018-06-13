@@ -1,0 +1,48 @@
+use avazu;
+
+set hive.merge.mapredfiles=true;
+
+set pt=<?=date('Y-m-d-H', $worker_pt);?>;
+
+select 'pt',
+'country',
+'adid',
+'sourceid',
+'Clicks',
+'Unknown_Click',
+'Real_Click',
+'Pre_Click',
+'Post_Click-local',
+'Post_Click-server',
+'Pre_Click-installing',
+'Jump',
+'Jump_Sucess',
+'Jump_timeout',
+'Jump_over_jump',
+'Jump_load_gpurl_fail',
+'Jump_package_mismatch',
+'Jump_invalid_gpurl',
+'Jump_404',
+'Jump_activity_start_fail',
+'Jump_count_Jump_Sucess',
+'Jump_time_Jump_Sucess',
+'Jump_count_1to_3',
+'Jump_count_3to_5',
+'Jump_count_5to_7',
+'Jump_count_7to_9',
+'Jump_count_9to_11',
+'Jump_count_more_11',
+'Jump_count_1to_3_success',
+'Jump_count_3to_5_success',
+'Jump_count_5to_7_success',
+'Jump_count_7to_9_success',
+'Jump_count_9to_11_success',
+'Jump_count_more_11_success'
+ from avazu.t_header;
+
+select pt,country,adid,sourceid,count(clk_type),sum(if(clk_type=-1,1,0)),sum(if(clk_type=0,1,0)),sum(if(clk_type=1,1,0)),sum(if(clk_type=2,1,0)),sum(if(clk_type=3,1,0)),sum(if(clk_type=4,1,0)),sum(jump_count),sum(if(clk_result=0,1,0)),sum(if(clk_result=1,1,0)),sum(if(clk_result=2,1,0)),sum(if(clk_result=3,1,0)),sum(if(clk_result=4,1,0)),sum(if(clk_result=5,1,0)),sum(if(clk_result=6,1,0)),sum(if(clk_result=7,1,0)),sum(if(clk_result=0,jump_count,0)),sum(if(clk_result=0,jump_time,0)),sum(if(jump_count>=1 and jump_count<3,1,0)),sum(if(jump_count>=3 and jump_count<5,1,0)),sum(if(jump_count>=5 and jump_count<7,1,0)),sum(if(jump_count>=7 and jump_count<9,1,0)),sum(if(jump_count>=9 and jump_count<11,1,0)),sum(if(jump_count>=11,1,0)),sum(if(clk_result=0 and jump_count>=1 and jump_count<3,1,0)),
+sum(if(clk_result=0 and jump_count>=3 and jump_count<5,1,0)),
+sum(if(clk_result=0 and jump_count>=5 and jump_count<7,1,0)),
+sum(if(clk_result=0 and jump_count>=7 and jump_count<9,1,0)),
+sum(if(clk_result=0 and jump_count>=9 and jump_count<11,1,0)),
+sum(if(clk_result=0 and jump_count>=11,1,0))   from avazu.t_apw_jump_detail_log where  pt ='${hiveconf:pt}'  group by pt,country,adid,sourceid;
