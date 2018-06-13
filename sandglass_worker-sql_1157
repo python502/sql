@@ -1,43 +1,56 @@
 set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+create temporary function getGeo as 'com.avazu.dc.hive.udf.UDFGetGeo';
+create temporary function newest as 'com.avazu.dc.hive.udaf.UDAFNewest';
+create temporary function oldest as 'com.avazu.dc.hive.udaf.UDAFOldest';
 create temporary function toUnixTimestamp as 'com.avazu.dc.hive.udf.UDFToUnixTimestamp';
 create temporary function fromUnixTimestamp as  'com.avazu.dc.hive.udf.UDFFromUnixTimestamp';
 
 set hive.auto.convert.join=false;
 
 set pt=<?=date('Y-m-d-H', $worker_pt);?>;
-set dt=<?=date('Y-m-d', $worker_pt);?>;
+set at=<?=date('Y-m-d', $worker_pt);?>;
+set two=<?=date('Y-m-d', $worker_pt - 2 * 86400);?>;
+set one=<?=date('Y-m-d', $worker_pt - 1 * 86400);?>;
 
 SELECT
-      toUnixTimestamp('${hiveconf:dt}', 'yyyy-MM-dd') as mbox_pt
-      , a.package_name
-      , a.app_ver
-      , b.geo
-      , a.act
-      , count(distinct a.gaid) as uv
-      , count(a.gaid) as pv
-      , sum(a.et-a.st) as period
+toUnixTimestamp('${hiveconf:at}', 'yyyy-MM-dd') as mbox_pt
+a.package_name,
+a.app_ver,
+b.geo,
+a.act,
+count(distinct a.gaid) as uv,
+count(a.gaid) as pv,
+sum(a.et-a.st) as period
 FROM
-    (SELECT
-        pt
-      , package_name
-      , app_ver
-      , act
-      , st
-      , et
-      , gaid
-    FROM avazu.t_app_tracking_ac_rt_log
-    where pt BETWEEN '${hiveconf:dt}-00' AND '${hiveconf:pt}'
-    ) as a
-    left join
-    (SELECT
-        gaid
-      , geo
-    FROM avazurepttmp.t_app_user_gaid_v2_log
-    where pt='${hiveconf:dt}'
-    ) as b
-    on  a.gaid = b.gaid
-    GROUP BY
-        a.package_name
-      , a.app_ver
-      , b.geo
-      , a.act
+ (select
+ pt,
+ package_name,
+ app_ver,
+ act,
+ st,
+ et,
+ gaid
+ FROM avazu.t_app_tracking_ac_rt_log
+ where pt BETWEEN '${hiveconf:at}-00' AND '${hiveconf:pt}'
+ ) as a
+ left join
+ (select
+ distinct c.gaid, c.geo
+ from
+   (select gaid,geo
+   FROM avazurepttmp.t_app_user_gaid_v2_log
+   where pt = '${hiveconf:two}'
+   union all
+   SELECT
+   lower(advertising_id) as gaid,
+   country_code as geo
+   FROM avazu.t_app_tracking_appsflyer_android_log
+   where pt between '${hiveconf:one}-00' AND '${hiveconf:pt}' AND event_type='install'
+   )as c
+  ) as b
+ on a.gaid=b.gaid
+group by
+a.package_name,
+a.app_ver,
+b.geo,
+a.act;

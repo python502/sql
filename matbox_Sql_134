@@ -10,7 +10,7 @@ $cond_rows            = $mbox_cond['rows'];
 
 select
     <? if (!$cond_dt['aggr']): ?>
-	FROM_UNIXTIME(mbox_pt, '%Y-%m-%d') as '日期',
+    FROM_UNIXTIME(mbox_pt, '%Y-%m-%d') as '日期',
     <? endif; ?>
 
     <? if (!$cond_package_name['aggr']): ?>
@@ -25,16 +25,16 @@ select
     geo as 'Country',
     <? endif; ?>
 
-	<? if (!$cond_act['aggr']): ?>
+    <? if (!$cond_act['aggr']): ?>
     act as 'Act',
     <? endif; ?>
 
-	sum(uv) as '独立访问量',
+    sum(uv) as '独立访问量',
     sum(pv) as '页面访问量',
     case
-        when sum(pv) > 0 then concat(round(sum(period))*100/sum(pv), 2), '%')
+        when sum(pv) > 0 then concat(round((sum(period))*100/sum(pv), 2), '%')
         else '-'
-    end as '平均访问时长',
+    end as '平均访问时长'
 
 from t_matbox_app_gaid_daily
 <?
@@ -133,8 +133,8 @@ from t_matbox_app_gaid_daily
         $group_by[] = 'geo';
     }
 
-	if (!$cond_act['aggr']) {
-	$group_by[] = 'act';
+    if (!$cond_act['aggr']) {
+    $group_by[] = 'act';
     }
 
     if (!empty($group_by)) {
