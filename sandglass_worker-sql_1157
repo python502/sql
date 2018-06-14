@@ -20,7 +20,7 @@ b.geo,
 a.act,
 count(distinct a.gaid) as uv,
 count(a.gaid) as pv,
-sum(a.et-a.st) as period
+sum(cast(substr(a.et, 1, 10) as int)-cast(substr(a.st, 1, 10) as int)) as period
 FROM
  (select
  pt,
