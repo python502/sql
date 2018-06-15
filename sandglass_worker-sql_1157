@@ -13,7 +13,7 @@ set two=<?=date('Y-m-d', $worker_pt - 2 * 86400);?>;
 set one=<?=date('Y-m-d', $worker_pt - 1 * 86400);?>;
 
 SELECT
-toUnixTimestamp('${hiveconf:at}', 'yyyy-MM-dd') as mbox_pt
+toUnixTimestamp('${hiveconf:at}', 'yyyy-MM-dd') as mbox_pt,
 a.package_name,
 a.app_ver,
 b.geo,

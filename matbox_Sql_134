@@ -32,7 +32,7 @@ select
     sum(uv) as '独立访问量',
     sum(pv) as '页面访问量',
     case
-        when sum(pv) > 0 then round(sum(period)/sum(pv), 2)
+        when sum(pv) > 0 then round(sum(period)/sum(pv), 1)
         else '-'
     end as '平均访问时长'
 
