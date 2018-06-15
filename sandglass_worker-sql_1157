@@ -31,7 +31,7 @@ FROM
  et,
  gaid
  FROM avazu.t_app_tracking_ac_rt_log
- where pt BETWEEN '${hiveconf:at}-00' AND '${hiveconf:pt}'
+ where pt BETWEEN '${hiveconf:at}-00' AND '${hiveconf:pt}' and (cast(substr(et, 1, 10) as int)>=cast(substr(st, 1, 10) as int))
  ) as a
  left join
  (select
