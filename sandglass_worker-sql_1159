@@ -12,7 +12,8 @@ select 'date',
 'Impressions',
 'Conversion',
 'Revenue',
-'Paid'
+'Paid',
+'Install'
  from avazu.t_header;
 
 SELECT
@@ -22,6 +23,7 @@ SELECT
       , a.country
       , count(distinct a.deviceid)
       , count(distinct a.trackid)
+      , count(a.adid)
       , sum(b.advpayout)
       , sum(b.payout)
 FROM

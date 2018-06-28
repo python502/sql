@@ -1,5 +1,5 @@
 {
-    "name": "t_matbox_app_count_daily",
+    "name": "t_app_user_event_click_count",
     "fields": [
         {"name": "hour",                   "type": "varchar(2)"},
         {"name": "app",                    "type": "varchar(50)"},
@@ -17,7 +17,7 @@
     ],
     "indexes": [
         {"name": "package_name"},
-        {"name": "app_ver"},
-        {"name": "geo"}
+        {"name": "app"},
+        {"name": "action"}
     ]
 }
