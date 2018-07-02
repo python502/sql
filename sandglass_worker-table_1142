@@ -1,5 +1,5 @@
 {
-    "name": "t_app_user_event_click_count",
+    "name": "t_app_user_action_stat_daily",
     "fields": [
         {"name": "hour",                   "type": "varchar(2)"},
         {"name": "app",                    "type": "varchar(50)"},

@@ -36,7 +36,7 @@ select
         else '-'
     end as '平均访问时长'
 
-from t_matbox_app_gaid_daily
+from t_app_page_action_stat_daily
 <?
 /* where */
     $where=array();
