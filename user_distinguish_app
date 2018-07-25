@@ -1,0 +1,390 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+create temporary function toUnixTimestamp   as 'com.avazu.dc.hive.udf.UDFToUnixTimestamp';
+create temporary function fromUnixTimestamp as  'com.avazu.dc.hive.udf.UDFFromUnixTimestamp';
+use avazurepttmp;
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+set one=<?=date('Y-m-d', $worker_pt-1*86400);?>;
+set two=<?=date('Y-m-d', $worker_pt-1*86400);?>;
+set thr=<?=date('Y-m-d', $worker_pt-3*86400);?>;
+
+create table if not exists user_distinguish_app_test
+(
+    package_name      string
+    ,app               string
+    ,geo               string
+    ,utm_type          string
+    ,dnu               bigint
+    ,dau               bigint
+    ,wau               bigint
+    ,mau               bigint
+    ,ui_dau            bigint
+    ,ui_wau            bigint
+    ,ui_mau            bigint
+    ,install           double
+    ,cost              double
+    ,unit_price        double
+    ,retains_1         bigint
+    ,retains_2         bigint
+    ,retains_3         bigint
+    ,retains_7         bigint
+    ,retains_14        bigint
+    ,retains_21        bigint
+    ,retains_30        bigint
+    ,ui_retains_1      bigint
+    ,ui_retains_2      bigint
+    ,ui_retains_3      bigint
+    ,ui_retains_7      bigint
+    ,ui_retains_14     bigint
+    ,ui_retains_21     bigint
+    ,ui_retains_30     bigint
+    ,dau_0_7           bigint
+    ,dau_8_30          bigint
+    ,dau_31_60         bigint
+    ,dau_61_90         bigint
+    ,dau_91_u          bigint
+    ,dau_retain_0_7    bigint
+    ,dau_retain_8_30   bigint
+    ,dau_retain_31_60 bigint
+    ,dau_retain_61_90  bigint
+    ,dau_retain_91_u   bigint
+) PARTITIONED BY(pt string, type string)
+stored AS orc;
+
+
+insert overwrite table user_distinguish_app_test partition (pt, type)
+select aa.package_name, aa.app, geo, utm_type
+    , sum(dnu) as dnu, sum(dau) as dau, sum(wau) as wau, sum(mau) as mau, sum(ui_dau) as ui_dau, sum(ui_wau) as ui_wau, sum(ui_mau) as ui_mau
+    , sum(install) as install , sum(cost) as cost , sum(unit_price) as unit_price
+    , sum(retain_1) as retain_1, sum(retain_2) as retain_2, sum(retain_3) as retain_3
+    , sum(retain_7) as retain_7, sum(retain_14) as retain_14, sum(retain_21) as retain_21, sum(retain_30) as retain_30
+    , sum(ui_retain_1) as ui_retain_1, sum(ui_retain_2) as ui_retain_2, sum(ui_retain_3) as ui_retain_3, sum(ui_retain_7) as ui_retain_7
+    , sum(ui_retain_14) as ui_retain_14, sum(ui_retain_21) as ui_retain_21, sum(ui_retain_30) as ui_retain_30
+    , sum(dau_0_7) as dau_0_7, sum(dau_8_30) as dau_8_30, sum(dau_31_60) as dau_31_60, sum(dau_61_90) as dau_61_90, sum(dau_91_u) as dau_91_u
+    , sum(dau_retain_0_7) as dau_retain_0_7, sum(dau_retain_8_30) as dau_retain_8_30, sum(dau_retain_31_60) as dau_retain_31_60
+    , sum(dau_retain_61_90) as dau_retain_61_90, sum(dau_retain_91_u) as dau_retain_91_u
+    , pt, type
+
+from
+(
+    select package_name, app, cost_app
+    from
+    (
+        select package_name, app, cost_app
+        from avazu.t_app_pkg2app_dim
+        where package_name != 'package_name' and app != 'app' and cost_app != 'cost_app'
+
+        union all
+
+        select package_name, 'skin' as app, 'skin' as cost_app
+        from avazurept.t_app_skin_package_name_log
+        where pt = '${hiveconf:pt}'
+    ) a
+    group by package_name, app, cost_app
+) aa
+join
+(
+    select x1.data_time as pt
+        , '0' as type, x1.package_name as package_name, x1.geo as geo, x1.utm_type as utm_type
+        , sum(if(dt_ct_diff = '0', 1, 0))   as dnu
+        , sum(if(dt_at_diff = '0', 1, 0))   as dau
+        , sum(if(dt_at_diff in ('0', '1', '2', '3', '4', '5', '6'), 1, 0))  as wau
+        , sum(if(dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29'), 1, 0)) as mau
+        , sum(if(dt_rt_diff = '0', 1, 0))   as ui_dau
+        , sum(if(dt_rt_diff in ('0', '1', '2', '3', '4', '5', '6'), 1, 0))  as ui_wau
+        , sum(if(dt_rt_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29'), 1, 0)) as ui_mau
+        , 0 as install
+        , 0 as cost
+        , 0 as unit_price
+        , 0 as retain_1, 0 as retain_2, 0 as retain_3, 0 as retain_7, 0 as retain_14, 0 as retain_21, 0 as retain_30
+        , 0 as ui_retain_1, 0 as ui_retain_2, 0 as ui_retain_3, 0 as ui_retain_7, 0 as ui_retain_14, 0 as ui_retain_21, 0 as ui_retain_30
+        , sum(if(dt_at_diff = '0' and ac_ct_diff between 0 and 7, 1, 0)) as dau_0_7
+        , sum(if(dt_at_diff = '0' and ac_ct_diff between 8 and 30, 1, 0)) as dau_8_30
+        , sum(if(dt_at_diff = '0' and ac_ct_diff between 31 and 60, 1, 0)) as dau_31_60
+        , sum(if(dt_at_diff = '0' and ac_ct_diff between 61 and 90, 1, 0)) as dau_61_90
+        , sum(if(dt_at_diff = '0' and ac_ct_diff >= 91, 1, 0)) as dau_91_u
+        , 0 as dau_retain_0_7 , 0 as dau_retain_8_30 , 0 as dau_retain_31_60 , 0 as dau_retain_61_90 , 0 as dau_retain_91_u
+    from
+    (
+        select data_time,package_name,geo
+            , case
+             when media_source in ('facebook', 'Facebook Ads') then 'FB'
+             when media_source in ('avazu_int', 'avazu_datacenter') then 'APX'
+             when media_source in ('googleadwords_int', 'adwords_int') then 'ADW'
+             when media_source = 'cashcash_int' then 'cashcash'
+             when media_source = 'superads_int' then 'superads'
+             when media_source = 'rupiahkilat' then 'rupiahkilat'
+             when media_source = 'Pinjamall' then 'Pinjamall'
+             when media_source = 'paydayloans' then 'paydayloans'
+             when media_source = 'aggrex_int' then 'aggrex_int'
+             when media_source = 'kreditmart_int' then 'kreditmart_int'
+             when media_source = 'qreditku_int' then 'qreditku_int'
+             else 'Organic'
+            end as utm_type
+            , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
+            , cast(datediff(data_time, real_time) as bigint) as dt_rt_diff
+            , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
+            , cast(datediff(data_time, create_at) as bigint) as dt_ct_diff
+            , datediff(active_time, create_at) as ac_ct_diff
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
+            and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
+            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
+            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
+   ) x1 where pt_dt_diff in ('0', '1', '2', '3') and dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29')
+    group by x1.data_time, x1.package_name, x1.geo, x1.utm_type
+
+    union all
+
+    select x2.pt as pt
+        , '0' as type, x2.package_name as package_name, x2.geo as geo, x2.utm_type as utm_type
+        , 0 as dnu
+        , 0 as dau
+        , 0 as wau
+        , 0 as mau
+        , 0 as ui_dau
+        , 0 as ui_wau
+        , 0 as ui_mau
+        , sum(x2.install) as install
+        , sum(x2.install*x2.unit_price) as cost
+        , sum(x2.unit_price) as unit_price
+        , 0 as retain_1, 0 as retain_2, 0 as retain_3, 0 as retain_7, 0 as retain_14, 0 as retain_21, 0 as retain_30
+        , 0 as ui_retain_1, 0 as ui_retain_2, 0 as ui_retain_3, 0 as ui_retain_7, 0 as ui_retain_14, 0 as ui_retain_21, 0 as ui_retain_30
+        , 0 as dau_0_7 , 0 as dau_8_30 , 0 as dau_31_60 , 0 as dau_61_90 , 0 as dau_91_u
+        , 0 as dau_retain_0_7 , 0 as dau_retain_8_30 , 0 as dau_retain_31_60 , 0 as dau_retain_61_90 , 0 as dau_retain_91_u
+    from
+    (
+        select aa.pt as pt,aa.package_name as package_name,aa.geo as geo, aa.utm_type as utm_type
+        ,if(aa.dnu is not null,aa.dnu,0) as install
+        ,if(bb.payout is not null,bb.payout,0) as unit_price
+        from
+        (
+            select c.pt as pt, c.package_name as package_name, app, utm_type, utm_source, geo, count(distinct gaid) as dnu
+            from
+            (
+                select if(a.pt is not null, a.pt, b.data_time) as pt
+                , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.package_name, b.package_name) as package_name
+                , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.utm_source, b.utm_source) as utm_source
+                , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.geo, b.geo) as geo
+                , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.utm_type, b.utm_type) as utm_type
+                , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.gaid, b.gaid) as gaid
+                from
+                (
+                    select x.pt as pt, utm_source, x.geo as geo, utm_type, x.package_name as package_name, x.gaid as gaid
+                    from
+                    (
+                        select substr(pt,1,10) as pt
+                        , case
+                        when media_source = 'Facebook Ads' then 'facebook'
+                        when media_source = 'avazu_datacenter' then 'avazu_int'
+                        when media_source = 'googleadwords_int' then 'adwords_int'
+                        when media_source = 'cashcash_int' then 'cashcash_int'
+                        when media_source = 'superads_int' then 'superads'
+                        when media_source = 'rupiahkilat' then 'rupiahkilat'
+                        when media_source = 'Pinjamall' then 'Pinjamall'
+                        when media_source = 'paydayloans' then 'paydayloans'
+                        when media_source = 'aggrex_int' then 'aggrex_int'
+                        when media_source = 'kreditmart_int' then 'kreditmart_int'
+                        when media_source = 'qreditku_int' then 'qreditku_int'
+                        end as utm_source
+                        , if(country_code = 'UK', 'GB', country_code) as geo
+                        , case
+                        when media_source = 'Facebook Ads' then 'FB'
+                        when media_source = 'avazu_datacenter' then 'APX'
+                        when media_source = 'googleadwords_int' then 'ADW'
+                        when media_source = 'cashcash_int' then 'cashcash'
+                        when media_source = 'superads_int' then 'superads'
+                        when media_source = 'rupiahkilat' then 'rupiahkilat'
+                        when media_source = 'Pinjamall' then 'Pinjamall'
+                        when media_source = 'paydayloans' then 'paydayloans'
+                        when media_source = 'aggrex_int' then 'aggrex_int'
+                        when media_source = 'kreditmart_int' then 'kreditmart_int'
+                        when media_source = 'qreditku_int' then 'qreditku_int'
+                        end as utm_type
+                        , app_id as package_name
+                        , if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id)) as gaid
+                        from avazu.t_app_tracking_appsflyer_android_log
+                        where pt between '${hiveconf:thr}-00' and '${hiveconf:pt}-23' and event_type = 'install'
+                        and (
+                        (advertising_id is not null and advertising_id <> '' and advertising_id <> 'null' and advertising_id <> 'NULL') or
+                        (idfv is not null and idfv <> '' and idfv <> 'null' and idfv <> 'NULL')
+                        )
+                        and media_source in ('Facebook Ads', 'avazu_datacenter', 'googleadwords_int', 'cashcash_int','superads_int','rupiahkilat','Pinjamall', 'paydayloans', 'aggrex_int', 'kreditmart_int', 'qreditku_int')
+                        group by substr(pt,1,10), media_source, country_code, app_id, if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id)), if(media_source = 'googleadwords_int', campaign, '')
+                    ) x
+                ) a
+                full outer join
+                (
+                    select data_time
+                         , utm_source
+                         , geo
+                         , 'ADW' as utm_type
+                         , package_name
+                         , gaid
+                    from avazurepttmp.t_app_user_active_gaid_v2_tmp
+                    where pt = '${hiveconf:pt}' and data_time=create_at
+                        and utm_source in ('avazu_int', 'eptonic_int', 'avazu', 'eptonic') and traffic_id like '%utm_source=%'
+                    group by data_time, utm_source, geo, package_name, gaid
+                ) b
+                on(a.pt=b.data_time and a.package_name = b.package_name and a.gaid = b.gaid and a.utm_type = b.utm_type)
+            ) c
+            join
+            (
+                select package_name, cost_app as app from avazu.t_app_pkg2app_dim where package_name <> 'package_name' and app <> 'skin'
+            ) d
+            on (c.package_name = d.package_name)
+            group by c.pt, c.package_name, app, utm_type, utm_source, geo
+        )aa
+        left join
+        (
+            select x.data_time as data_time, app, utm_type, tier, payout, trim(geo_new)  as geo
+            from (
+                select b.data_time as data_time, app, utm_type, tier, geo, payout
+                from
+                (
+                    select pt, begin_date, app, utm_type, tier, geo, COALESCE(cast(cast(payout as double)*100 as bigint), 0) as payout
+                    from avazu.app_promotion_payout_dim
+                    where app <> 'app'
+                ) a
+                join
+                (
+                    select '${hiveconf:pt}' as data_time, max(pt) as pt
+                    from avazu.app_promotion_payout_dim
+                    where pt <= '${hiveconf:pt}'
+                    union all
+                    select '${hiveconf:one}' as data_time, max(pt) as pt
+                    from avazu.app_promotion_payout_dim
+                    where pt <= '${hiveconf:one}'
+                    union all
+                    select '${hiveconf:two}' as data_time, max(pt) as pt
+                    from avazu.app_promotion_payout_dim
+                    where pt <= '${hiveconf:two}'
+                    union all
+                    select '${hiveconf:thr}' as data_time, max(pt) as pt
+                    from avazu.app_promotion_payout_dim
+                    where pt <= '${hiveconf:thr}'
+                ) b
+                on(a.pt = b.pt)
+             )x
+             lateral view explode(split(geo, ',')) t as geo_new
+        )bb
+        on(aa.pt=bb.data_time and aa.utm_type = bb.utm_type and aa.app = bb.app and aa.geo=bb.geo)
+   ) x2
+    group by x2.pt, x2.package_name, x2.geo, x2.utm_type
+
+    union all
+
+    select create_at as pt
+         , type
+         , package_name, geo, utm_type
+         , 0 as dnu, 0 as dau, 0 as wau, 0 as mau
+         , 0 as ui_dau, 0 as ui_wau, 0 as ui_mau , 0 as install, 0 as cost, 0 as unit_price
+         , sum(if(type = '1', 1, 0)) as retain_1
+         , sum(if(type = '2', 1, 0)) as retain_2
+         , sum(if(type = '3', 1, 0)) as retain_3
+         , sum(if(type = '7', 1, 0)) as retain_7
+         , sum(if(type = '14', 1, 0)) as retain_14
+         , sum(if(type = '21', 1, 0)) as retain_21
+         , sum(if(type = '30', 1, 0)) as retain_30
+         , sum(if(dt_rt_diff = '0' and type = '1', 1, 0)) as ui_retain_1
+         , sum(if(dt_rt_diff = '0' and type = '2', 1, 0)) as ui_retain_2
+         , sum(if(dt_rt_diff = '0' and type = '3', 1, 0)) as ui_retain_3
+         , sum(if(dt_rt_diff = '0' and type = '7', 1, 0)) as ui_retain_7
+         , sum(if(dt_rt_diff = '0' and type = '14', 1, 0)) as ui_retain_14
+         , sum(if(dt_rt_diff = '0' and type = '21', 1, 0)) as ui_retain_21
+         , sum(if(dt_rt_diff = '0' and type = '30', 1, 0)) as ui_retain_30
+         , 0 as dau_0_7 , 0 as dau_8_30 , 0 as dau_31_60 , 0 as dau_61_90 , 0 as dau_91_u
+         , 0 as dau_retain_0_7 , 0 as dau_retain_8_30 , 0 as dau_retain_31_60 , 0 as dau_retain_61_90 , 0 as dau_retain_91_u
+    from
+    (
+        select create_at,package_name,geo
+             , case
+                 when media_source in ('facebook', 'Facebook Ads') then 'FB'
+                 when media_source in ('avazu_int', 'avazu_datacenter') then 'APX'
+                 when media_source in ('googleadwords_int', 'adwords_int') then 'ADW'
+                 when media_source = 'cashcash_int' then 'cashcash'
+                 when media_source = 'superads_int' then 'superads'
+                 when media_source = 'rupiahkilat' then 'rupiahkilat'
+                 when media_source = 'Pinjamall' then 'Pinjamall'
+                 when media_source = 'paydayloans' then 'paydayloans'
+                 when media_source = 'aggrex_int' then 'aggrex_int'
+                 when media_source = 'kreditmart_int' then 'kreditmart_int'
+                 when media_source = 'qreditku_int' then 'qreditku_int'
+                 else 'Organic'
+               end as utm_type
+            , cast(datediff(active_time, create_at) as bigint) as type
+            , cast(datediff(data_time, real_time) as bigint) as dt_rt_diff
+            , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
+            , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
+            and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
+            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
+            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
+    )x3 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and type in ('1','2','3','7','14','21','30')
+    group by create_at, type, package_name, geo, utm_type
+
+    union all
+
+    select date_sub(data_time,1) as pt
+         , '1' as type
+         , package_name, geo, utm_type
+         , 0 as dnu, 0 as dau, 0 as wau, 0 as mau
+         , 0 as ui_dau, 0 as ui_wau, 0 as ui_mau , 0 as install, 0 as cost, 0 as unit_price
+         , 0 as retain_1
+         , 0 as retain_2
+         , 0 as retain_3
+         , 0 as retain_7
+         , 0 as retain_14
+         , 0 as retain_21
+         , 0 as retain_30
+         , 0 as ui_retain_1
+         , 0 as ui_retain_2
+         , 0 as ui_retain_3
+         , 0 as ui_retain_7
+         , 0 as ui_retain_14
+         , 0 as ui_retain_21
+         , 0 as ui_retain_30
+         , 0 as dau_0_7 , 0 as dau_8_30 , 0 as dau_31_60 , 0 as dau_61_90 , 0 as dau_91_u
+        , sum(if(ac_cr_diff between 1 and 8, 1, 0)) as dau_retain_0_7
+        , sum(if(ac_cr_diff between 9 and 31, 1, 0)) as dau_retain_8_30
+        , sum(if(ac_cr_diff between 32 and 61, 1, 0)) as dau_retain_31_60
+        , sum(if(ac_cr_diff between 62 and 91, 1, 0)) as dau_retain_61_90
+        , sum(if(ac_cr_diff >= 92, 1, 0)) as dau_retain_91_u
+    from
+    (
+        select data_time,package_name,geo
+             , case
+                 when media_source in ('facebook', 'Facebook Ads') then 'FB'
+                 when media_source in ('avazu_int', 'avazu_datacenter') then 'APX'
+                 when media_source in ('googleadwords_int', 'adwords_int') then 'ADW'
+                 when media_source = 'cashcash_int' then 'cashcash'
+                 when media_source = 'superads_int' then 'superads'
+                 when media_source = 'rupiahkilat' then 'rupiahkilat'
+                 when media_source = 'Pinjamall' then 'Pinjamall'
+                 when media_source = 'paydayloans' then 'paydayloans'
+                 when media_source = 'aggrex_int' then 'aggrex_int'
+                 when media_source = 'kreditmart_int' then 'kreditmart_int'
+                 when media_source = 'qreditku_int' then 'qreditku_int'
+                 else 'Organic'
+               end as utm_type
+            , datediff(active_time, create_at) as ac_cr_diff
+            , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
+            , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
+            and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
+            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
+    )x4 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and ac_cr_diff !=0
+    group by data_time, package_name, geo, utm_type
+
+) bb
+on (aa.package_name = bb.package_name)
+group by aa.package_name, aa.app, geo, utm_type, pt, type;

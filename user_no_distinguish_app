@@ -1,0 +1,118 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+create temporary function toUnixTimestamp   as 'com.avazu.dc.hive.udf.UDFToUnixTimestamp';
+create temporary function fromUnixTimestamp as  'com.avazu.dc.hive.udf.UDFFromUnixTimestamp';
+use avazurepttmp;
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+
+create table if not exists user_no_distinguish_app_test
+(
+    geo               string
+    ,dnu               bigint
+    ,dau               bigint
+    ,wau               bigint
+    ,mau               bigint
+    ,ui_dau            bigint
+    ,ui_wau            bigint
+    ,ui_mau            bigint
+    ,retains_1         bigint
+    ,retains_2         bigint
+    ,retains_3         bigint
+    ,retains_7         bigint
+    ,retains_14        bigint
+    ,retains_21        bigint
+    ,retains_30        bigint
+    ,ui_retains_1      bigint
+    ,ui_retains_2      bigint
+    ,ui_retains_3      bigint
+    ,ui_retains_7      bigint
+    ,ui_retains_14     bigint
+    ,ui_retains_21     bigint
+    ,ui_retains_30     bigint
+) PARTITIONED BY(pt string, type string)
+stored AS orc;
+
+
+insert overwrite table user_no_distinguish_app_test partition (pt, type)
+select geo
+    , sum(dnu) as dnu, sum(dau) as dau, sum(wau) as wau, sum(mau) as mau, sum(ui_dau) as ui_dau, sum(ui_wau) as ui_wau, sum(ui_mau) as ui_mau
+    , sum(retain_1) as retain_1, sum(retain_2) as retain_2, sum(retain_3) as retain_3
+    , sum(retain_7) as retain_7, sum(retain_14) as retain_14, sum(retain_21) as retain_21, sum(retain_30) as retain_30
+    , sum(ui_retain_1) as ui_retain_1, sum(ui_retain_2) as ui_retain_2, sum(ui_retain_3) as ui_retain_3, sum(ui_retain_7) as ui_retain_7
+    , sum(ui_retain_14) as ui_retain_14, sum(ui_retain_21) as ui_retain_21, sum(ui_retain_30) as ui_retain_30
+    , pt, type
+
+from
+(
+    select x1.data_time as pt
+        , '0' as type,  x1.geo as geo
+        , sum(if(dt_ct_diff = '0', 1, 0))   as dnu
+        , sum(if(dt_at_diff = '0', 1, 0))   as dau
+        , sum(if(dt_at_diff in ('0', '1', '2', '3', '4', '5', '6'), 1, 0))  as wau
+        , sum(if(dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29'), 1, 0)) as mau
+        , sum(if(dt_rt_diff = '0', 1, 0))   as ui_dau
+        , sum(if(dt_rt_diff in ('0', '1', '2', '3', '4', '5', '6'), 1, 0))  as ui_wau
+        , sum(if(dt_rt_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29'), 1, 0)) as ui_mau
+        , 0 as retain_1, 0 as retain_2, 0 as retain_3, 0 as retain_7, 0 as retain_14, 0 as retain_21, 0 as retain_30
+        , 0 as ui_retain_1, 0 as ui_retain_2, 0 as ui_retain_3, 0 as ui_retain_7, 0 as ui_retain_14, 0 as ui_retain_21, 0 as ui_retain_30
+    from
+    (
+        select data_time
+            , geo
+            , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
+            , cast(datediff(data_time, real_time) as bigint) as dt_rt_diff
+            , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
+            , cast(datediff(data_time, create_at) as bigint) as dt_ct_diff
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}'
+            and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
+            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
+            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
+   ) x1
+    where pt_dt_diff in ('0', '1', '2', '3') and dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29')
+    group by x1.data_time, x1.geo
+
+    union all
+
+    select create_at as pt
+         , type
+         , geo
+         , 0 as dnu, 0 as dau, 0 as wau, 0 as mau
+         , 0 as ui_dau, 0 as ui_wau, 0 as ui_mau
+         , sum(if(type = '1', 1, 0)) as retain_1
+         , sum(if(type = '2', 1, 0)) as retain_2
+         , sum(if(type = '3', 1, 0)) as retain_3
+         , sum(if(type = '7', 1, 0)) as retain_7
+         , sum(if(type = '14', 1, 0)) as retain_14
+         , sum(if(type = '21', 1, 0)) as retain_21
+         , sum(if(type = '30', 1, 0)) as retain_30
+         , sum(if(rt_at_diff = '0' and type = '1', 1, 0)) as ui_retain_1
+         , sum(if(rt_at_diff = '0' and type = '2', 1, 0)) as ui_retain_2
+         , sum(if(rt_at_diff = '0' and type = '3', 1, 0)) as ui_retain_3
+         , sum(if(rt_at_diff = '0' and type = '7', 1, 0)) as ui_retain_7
+         , sum(if(rt_at_diff = '0' and type = '14', 1, 0)) as ui_retain_14
+         , sum(if(rt_at_diff = '0' and type = '21', 1, 0)) as ui_retain_21
+         , sum(if(rt_at_diff = '0' and type = '30', 1, 0)) as ui_retain_30
+    from
+    (
+        select geo
+            , create_at
+            , cast(datediff(active_time, create_at) as bigint) as type
+            , cast(datediff(real_time, active_time) as bigint) as rt_at_diff
+            , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
+            , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}'
+            and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
+            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
+            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
+    )x2 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and type in ('1','2','3','7','14','21','30')
+    group by create_at, type, geo
+) bb
+group by geo, pt, type;
