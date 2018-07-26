@@ -131,7 +131,7 @@ join
         from avazurepttmp.t_app_user_active_gaid_v2_tmp
         where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
             and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
-            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and data_time is not null and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
             and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
    ) x1 where pt_dt_diff in ('0', '1', '2', '3') and dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29')
     group by x1.data_time, x1.package_name, x1.geo, x1.utm_type
@@ -314,7 +314,7 @@ join
         from avazurepttmp.t_app_user_active_gaid_v2_tmp
         where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
             and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
-            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and data_time is not null and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
             and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
     )x3 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and type in ('1','2','3','7','14','21','30')
     group by create_at, type, package_name, geo, utm_type
@@ -357,7 +357,7 @@ join
         from avazurepttmp.t_app_user_active_gaid_v2_tmp
         where pt = '${hiveconf:pt}' and package_name is not null and package_name <> '' and package_name <> 'NULL' and package_name <> 'null'
             and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
-            and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
+            and data_time is not null and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
             and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
     )x4 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and ac_cr_diff !=0
     group by data_time, package_name, geo, utm_type
