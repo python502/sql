@@ -64,7 +64,7 @@ from
         select data_time
             , geo
             , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
-            , cast(datediff(data_time, real_time) as bigint) as dt_rt_diff
+            , if (real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null',cast(datediff(data_time, real_time) as bigint),null) as dt_rt_diff
             , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
             , cast(datediff(data_time, create_at) as bigint) as dt_ct_diff
         from avazurepttmp.t_app_user_active_gaid_v2_tmp
@@ -72,7 +72,6 @@ from
             and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
             and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
             and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
-            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
    ) x1
     where pt_dt_diff in ('0', '1', '2', '3') and dt_at_diff in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29')
     group by x1.data_time, x1.geo
@@ -91,19 +90,19 @@ from
          , sum(if(type = '14', 1, 0)) as retain_14
          , sum(if(type = '21', 1, 0)) as retain_21
          , sum(if(type = '30', 1, 0)) as retain_30
-         , sum(if(rt_at_diff = '0' and type = '1', 1, 0)) as ui_retain_1
-         , sum(if(rt_at_diff = '0' and type = '2', 1, 0)) as ui_retain_2
-         , sum(if(rt_at_diff = '0' and type = '3', 1, 0)) as ui_retain_3
-         , sum(if(rt_at_diff = '0' and type = '7', 1, 0)) as ui_retain_7
-         , sum(if(rt_at_diff = '0' and type = '14', 1, 0)) as ui_retain_14
-         , sum(if(rt_at_diff = '0' and type = '21', 1, 0)) as ui_retain_21
-         , sum(if(rt_at_diff = '0' and type = '30', 1, 0)) as ui_retain_30
+         , sum(if(dt_rt_diff = '0' and type = '1', 1, 0)) as ui_retain_1
+         , sum(if(dt_rt_diff = '0' and type = '2', 1, 0)) as ui_retain_2
+         , sum(if(dt_rt_diff = '0' and type = '3', 1, 0)) as ui_retain_3
+         , sum(if(dt_rt_diff = '0' and type = '7', 1, 0)) as ui_retain_7
+         , sum(if(dt_rt_diff = '0' and type = '14', 1, 0)) as ui_retain_14
+         , sum(if(dt_rt_diff = '0' and type = '21', 1, 0)) as ui_retain_21
+         , sum(if(dt_rt_diff = '0' and type = '30', 1, 0)) as ui_retain_30
     from
     (
         select geo
             , create_at
             , cast(datediff(active_time, create_at) as bigint) as type
-            , cast(datediff(real_time, active_time) as bigint) as rt_at_diff
+            , if (real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null',cast(datediff(data_time, real_time) as bigint),null) as dt_rt_diff
             , cast(datediff(data_time, active_time) as bigint) as dt_at_diff
             , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
         from avazurepttmp.t_app_user_active_gaid_v2_tmp
@@ -111,7 +110,6 @@ from
             and create_at is not null and create_at <> '' and create_at <> 'null' and create_at <> 'NULL'
             and data_time <> '' and data_time <> 'null' and data_time <> 'NULL'
             and active_time is not null and active_time <> '' and active_time <> 'null' and active_time <> 'NULL'
-            and real_time is not null and real_time <> '' and real_time <> 'NULL' and real_time <> 'null'
     )x2 where dt_at_diff = '0' and pt_dt_diff in ('0', '1', '2', '3') and type in ('1','2','3','7','14','21','30')
     group by create_at, type, geo
 ) bb
