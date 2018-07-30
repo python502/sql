@@ -1,0 +1,61 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+use avazurepttmp;
+
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+
+
+
+select "pt" as pt
+    , "type" as type
+    , "geo"                as geo
+    , "dnu"                as dnu
+    , "dau"                as dau
+    , "wau"                as wau
+    , "mau"                as mau
+    , "ui_dau"             as ui_dau
+    , "ui_wau"             as ui_wau
+    , "ui_mau"             as ui_mau
+    , "retains_1"          as retains_1
+    , "retains_2"          as retains_2
+    , "retains_3"          as retains_3
+    , "retains_7"          as retains_7
+    , "retains_14"         as retains_14
+    , "retains_21"         as retains_21
+    , "retains_30"         as retains_30
+    , "ui_retains_1"       as ui_retains_1
+    , "ui_retains_2"       as ui_retains_2
+    , "ui_retains_3"       as ui_retains_3
+    , "ui_retains_7"       as ui_retains_7
+    , "ui_retains_14"      as ui_retains_14
+    , "ui_retains_21"      as ui_retains_21
+    , "ui_retains_30"      as ui_retains_30
+from avazu.t_header limit 1;
+
+
+select   pt
+        ,type
+        ,geo
+        ,dnu
+        ,dau
+        ,wau
+        ,mau
+        ,ui_dau
+        ,ui_wau
+        ,ui_mau
+        ,retains_1
+        ,retains_2
+        ,retains_3
+        ,retains_7
+        ,retains_14
+        ,retains_21
+        ,retains_30
+        ,ui_retains_1
+        ,ui_retains_2
+        ,ui_retains_3
+        ,ui_retains_7
+        ,ui_retains_14
+        ,ui_retains_21
+        ,ui_retains_30
+from dotc_geo_users_daily
+where pt = '${hiveconf:pt}';

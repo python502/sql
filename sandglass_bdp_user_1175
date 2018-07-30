@@ -1,0 +1,93 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+use avazurepttmp;
+
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+
+
+
+select "pt" as pt
+    , "type" as type
+    , "package_name"       as package_name
+    , "app"                as app
+    , "geo"                as geo
+    , "utm_type"           as utm_type
+    , "dnu"                as dnu
+    , "dau"                as dau
+    , "wau"                as wau
+    , "mau"                as mau
+    , "ui_dau"             as ui_dau
+    , "ui_wau"             as ui_wau
+    , "ui_mau"             as ui_mau
+    , "install"            as install
+    , "cost"               as cost
+    , "unit_price"         as unit_price
+    , "retains_1"          as retains_1
+    , "retains_2"          as retains_2
+    , "retains_3"          as retains_3
+    , "retains_7"          as retains_7
+    , "retains_14"         as retains_14
+    , "retains_21"         as retains_21
+    , "retains_30"         as retains_30
+    , "ui_retains_1"       as ui_retains_1
+    , "ui_retains_2"       as ui_retains_2
+    , "ui_retains_3"       as ui_retains_3
+    , "ui_retains_7"       as ui_retains_7
+    , "ui_retains_14"      as ui_retains_14
+    , "ui_retains_21"      as ui_retains_21
+    , "ui_retains_30"      as ui_retains_30
+    , "dau_0_7"            as dau_0_7
+    , "dau_8_30"           as dau_8_30
+    , "dau_31_60"          as dau_31_60
+    , "dau_61_90"          as dau_61_90
+    , "dau_91_u"           as dau_91_u
+    , "dau_retains_0_7"    as dau_retains_0_7
+    , "dau_retains_8_30"   as dau_retains_8_30
+    , "dau_retains_31_60"  as dau_retains_31_60
+    , "dau_retains_61_90"  as dau_retains_61_90
+    , "dau_retains_91_u"   as dau_retains_91_u
+from avazu.t_header limit 1;
+
+
+select   pt
+        ,type
+        ,package_name
+        ,app
+        ,geo
+        ,utm_type
+        ,dnu
+        ,dau
+        ,wau
+        ,mau
+        ,ui_dau
+        ,ui_wau
+        ,ui_mau
+        ,install
+        ,cost
+        ,unit_price
+        ,retains_1
+        ,retains_2
+        ,retains_3
+        ,retains_7
+        ,retains_14
+        ,retains_21
+        ,retains_30
+        ,ui_retains_1
+        ,ui_retains_2
+        ,ui_retains_3
+        ,ui_retains_7
+        ,ui_retains_14
+        ,ui_retains_21
+        ,ui_retains_30
+        ,dau_0_7
+        ,dau_8_30
+        ,dau_31_60
+        ,dau_61_90
+        ,dau_91_u
+        ,dau_retains_0_7
+        ,dau_retains_8_30
+        ,dau_retains_31_60
+        ,dau_retains_61_90
+        ,dau_retains_91_u
+from dotc_app_geo_users_daily
+where pt = '${hiveconf:pt}';
