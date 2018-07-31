@@ -7,7 +7,6 @@ set pt=<?=date('Y-m-d', $worker_pt);?>;
 
 
 select "pt" as pt
-    , "type" as type
     , "package_name"       as package_name
     , "app"                as app
     , "geo"                as geo
@@ -49,45 +48,45 @@ select "pt" as pt
 from avazu.t_header limit 1;
 
 
-select   pt
-        ,type
+select   concat(pt,' 00:00:00')
         ,package_name
         ,app
         ,geo
         ,utm_type
-        ,dnu
-        ,dau
-        ,wau
-        ,mau
-        ,ui_dau
-        ,ui_wau
-        ,ui_mau
-        ,install
-        ,cost
-        ,unit_price
-        ,retains_1
-        ,retains_2
-        ,retains_3
-        ,retains_7
-        ,retains_14
-        ,retains_21
-        ,retains_30
-        ,ui_retains_1
-        ,ui_retains_2
-        ,ui_retains_3
-        ,ui_retains_7
-        ,ui_retains_14
-        ,ui_retains_21
-        ,ui_retains_30
-        ,dau_0_7
-        ,dau_8_30
-        ,dau_31_60
-        ,dau_61_90
-        ,dau_91_u
-        ,dau_retains_0_7
-        ,dau_retains_8_30
-        ,dau_retains_31_60
-        ,dau_retains_61_90
-        ,dau_retains_91_u
+        ,sum(if(dnu is not null,dnu,0)) as dnu
+        ,sum(if(dau is not null,dau,0)) as dau
+        ,sum(if(wau is not null,wau,0)) as wau
+        ,sum(if(mau is not null,mau,0)) as mau
+        ,sum(if(ui_dau is not null,ui_dau,0)) as ui_dau
+        ,sum(if(ui_wau is not null,ui_wau,0)) as ui_wau
+        ,sum(if(ui_mau is not null,ui_mau,0)) as ui_mau
+        ,sum(if(install is not null,install,0)) as install
+        ,sum(if(cost is not null,cost,0)) as cost
+        ,sum(if(unit_price is not null,unit_price,0)) as unit_price
+        ,sum(if(retains_1 is not null,retains_1,0)) as retains_1
+        ,sum(if(retains_2 is not null,retains_2,0)) as retains_2
+        ,sum(if(retains_3 is not null,retains_3,0)) as retains_3
+        ,sum(if(retains_7 is not null,retains_7,0)) as retains_7
+        ,sum(if(retains_14 is not null,retains_14,0)) as retains_14
+        ,sum(if(retains_21 is not null,retains_21,0)) as retains_21
+        ,sum(if(retains_30 is not null,retains_30,0)) as retains_30
+        ,sum(if(ui_retains_1 is not null,ui_retains_1,0)) as ui_retains_1
+        ,sum(if(ui_retains_2 is not null,ui_retains_2,0)) as ui_retains_2
+        ,sum(if(ui_retains_3 is not null,ui_retains_3,0)) as ui_retains_3
+        ,sum(if(ui_retains_7 is not null,ui_retains_7,0)) as ui_retains_7
+        ,sum(if(ui_retains_14 is not null,ui_retains_14,0)) as ui_retains_14
+        ,sum(if(ui_retains_21 is not null,ui_retains_21,0)) as ui_retains_21
+        ,sum(if(ui_retains_30 is not null,ui_retains_30,0)) as ui_retains_30
+        ,sum(if(dau_0_7 is not null,dau_0_7,0)) as dau_0_7
+        ,sum(if(dau_8_30 is not null,dau_8_30,0)) as dau_8_30
+        ,sum(if(dau_31_60 is not null,dau_31_60,0)) as dau_31_60
+        ,sum(if(dau_61_90 is not null,dau_61_90,0)) as dau_61_90
+        ,sum(if(dau_91_u is not null,dau_91_u,0)) as dau_91_u
+        ,sum(if(dau_retains_0_7 is not null,dau_retains_0_7,0)) as dau_retains_0_7
+        ,sum(if(dau_retains_8_30 is not null,dau_retains_8_30,0)) as dau_retains_8_30
+        ,sum(if(dau_retains_31_60 is not null,dau_retains_31_60,0)) as dau_retains_31_60
+        ,sum(if(dau_retains_61_90 is not null,dau_retains_61_90,0)) as dau_retains_61_90
+        ,sum(if(dau_retains_91_u is not null,dau_retains_91_u,0)) as dau_retains_91_u
 from dotc_app_geo_users_daily
-where pt = '${hiveconf:pt}';
+where pt = '${hiveconf:pt}'
+group by pt,package_name,app,geo,utm_type;
