@@ -9,7 +9,7 @@ set hive.exec.dynamic.partition.mode=nonstrict;
 
 set pt=<?=date('Y-m-d', $worker_pt);?>;
 
-create table if not exists user_no_distinguish_app_test
+create table if not exists dotc_geo_users_daily
 (
     geo               string
     ,dnu               bigint
@@ -37,7 +37,7 @@ create table if not exists user_no_distinguish_app_test
 stored AS orc;
 
 
-insert overwrite table user_no_distinguish_app_test partition (pt, type)
+insert overwrite table dotc_geo_users_daily partition (pt, type)
 select geo
     , sum(dnu) as dnu, sum(dau) as dau, sum(wau) as wau, sum(mau) as mau, sum(ui_dau) as ui_dau, sum(ui_wau) as ui_wau, sum(ui_mau) as ui_mau
     , sum(retain_1) as retain_1, sum(retain_2) as retain_2, sum(retain_3) as retain_3

@@ -12,7 +12,7 @@ set one=<?=date('Y-m-d', $worker_pt-1*86400);?>;
 set two=<?=date('Y-m-d', $worker_pt-1*86400);?>;
 set thr=<?=date('Y-m-d', $worker_pt-3*86400);?>;
 
-create table if not exists user_distinguish_app_test
+create table if not exists dotc_app_geo_users_daily
 (
     package_name       string
     ,app               string
@@ -47,16 +47,16 @@ create table if not exists user_distinguish_app_test
     ,dau_31_60         bigint
     ,dau_61_90         bigint
     ,dau_91_u          bigint
-    ,dau_retain_0_7    bigint
-    ,dau_retain_8_30   bigint
-    ,dau_retain_31_60  bigint
-    ,dau_retain_61_90  bigint
-    ,dau_retain_91_u   bigint
+    ,dau_retains_0_7    bigint
+    ,dau_retains_8_30   bigint
+    ,dau_retains_31_60  bigint
+    ,dau_retains_61_90  bigint
+    ,dau_retains_91_u   bigint
 ) PARTITIONED BY(pt string, type string)
 stored AS orc;
 
 
-insert overwrite table user_distinguish_app_test partition (pt, type)
+insert overwrite table dotc_app_geo_users_daily partition (pt, type)
 select aa.package_name, aa.app, geo, utm_type
     , sum(dnu) as dnu, sum(dau) as dau, sum(wau) as wau, sum(mau) as mau, sum(ui_dau) as ui_dau, sum(ui_wau) as ui_wau, sum(ui_mau) as ui_mau
     , sum(install) as install , sum(cost) as cost , sum(unit_price) as unit_price
