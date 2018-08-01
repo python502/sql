@@ -1,0 +1,95 @@
+#!/bin/sh
+
+#按小时删除分区：
+date_beg='2017-02-01 03'
+date_end='2017-02-01 05'
+table=test_zhangyuan
+database=avazudevtmp
+beg_time=`date -d "$date_beg" +%Y%m%d%H`
+end_time=`date -d "$date_end" +%Y%m%d%H`
+while [ "$beg_time" -le "$end_time" ];
+do
+    user_time=`date -d "$date_beg" "+%Y-%m-%d-%H"`
+    hive -e "use ${database}; alter table ${table} drop partition (pt='${user_time}');"
+    beg_time=`date -d "$date_beg + 1 hours" "+%Y%m%d%H"`
+    date_beg=`date -d "$date_beg + 1 hours" "+%Y-%m-%d %H"`
+done
+
+#按天删除分区：
+#!/bin/sh
+date_beg='2017-02-01'
+date_end='2017-03-01'
+table=t_appwall_click_detail_log_tmp
+database=avazudevtmp
+beg_time=`date -d "$date_beg" +%Y%m%d`
+end_time=`date -d "$date_end" +%Y%m%d`
+while [ "$beg_time" -le "$end_time" ];
+do
+    user_time=`date -d "$beg_time" "+%Y-%m-%d"`
+    hive -e "use ${database}; alter table ${table} drop partition (pt='${user_time}');"
+    beg_time=`date -d "$beg_time + 1 day" "+%Y%m%d"`
+done
+
+
+按小时：
+date_beg='2017-05-10 00'
+date_end='2017-05-31 00'
+table=t_app_tracking_nw_ne_log
+database=avazu
+
+date_beg='2016-08-01 00'
+date_end='2016-12-20 00'
+table=t_traffic_detail_log
+database=avazu
+
+date_beg='2016-08-01 00'
+date_end='2016-12-20 00'
+table=t_win_detail_log
+database=avazu
+
+date_beg='2016-08-01 00'
+date_end='2017-04-20 00'
+table=t_apx_click_detail_log
+database=avazu
+
+date_beg='2016-08-01 00'
+date_end='2017-04-20 00'
+table=t_apx_request_detail_log
+database=avazu
+
+date_beg='2016-08-01 00'
+date_end='2017-04-20 00'
+table=t_apx_response_detail_log
+database=avazu
+
+
+按天：
+date_beg='2016-12-08'
+date_end='2016-12-05'
+table=app_wifi_data_all
+database=avazu
+
+date_beg='2017-02-22'
+date_end='2017-03-22'
+table=t_app_user_new_log
+database=avazu
+
+date_beg='2017-04-21'
+date_end='2017-05-20'
+table=t_app_user_devid_v2_log
+database=avazurepttmp
+
+date_beg='2017-04-21'
+date_end='2017-05-20'
+table=t_app_user_andid_v2_log
+database=avazurepttmp
+
+date_beg='2017-02-26'
+date_end='2017-03-26'
+table=t_app_user_android_new_log
+database=avazurepttmp
+
+date_beg='2016-08-01'
+date_end='2017-03-22'
+table=app_user_active_devid_tmp
+database=avazurepttmp
