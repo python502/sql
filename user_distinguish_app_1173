@@ -9,7 +9,7 @@ set hive.exec.dynamic.partition.mode=nonstrict;
 
 set pt=<?=date('Y-m-d', $worker_pt);?>;
 set one=<?=date('Y-m-d', $worker_pt-1*86400);?>;
-set two=<?=date('Y-m-d', $worker_pt-1*86400);?>;
+set two=<?=date('Y-m-d', $worker_pt-2*86400);?>;
 set thr=<?=date('Y-m-d', $worker_pt-3*86400);?>;
 
 create table if not exists dotc_app_geo_users_daily
