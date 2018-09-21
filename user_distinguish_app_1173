@@ -121,6 +121,14 @@ join
              when media_source = 'aggrex_int' then 'aggrex_int'
              when media_source = 'kreditmart_int' then 'kreditmart_int'
              when media_source = 'qreditku_int' then 'qreditku_int'
+             when media_source = 'heiner_int' then 'heiner_int'
+             when media_source = 'newsinpalm_int' then 'newsinpalm'
+             when media_source = 'af_app_invites' then 'raja_invites'
+             when media_source = 'shkyad_int' then 'shkyad_int'
+             when media_source = 'adxmiagency' then 'adxmi'
+             when media_source = 'appnext_int' then 'Appnext'
+             when media_source = 'unityads_int' then 'Unity'
+             when media_source = 'yahoogemini_int' then 'yahoo'
              else 'Organic'
             end as utm_type
             , cast(datediff(pt, data_time) as bigint) as pt_dt_diff
@@ -182,6 +190,14 @@ join
                         when media_source = 'aggrex_int' then 'aggrex_int'
                         when media_source = 'kreditmart_int' then 'kreditmart_int'
                         when media_source = 'qreditku_int' then 'qreditku_int'
+                        when media_source = 'heiner_int' then 'heiner_int'
+                        when media_source = 'newsinpalm_int' then 'newsinpalm'
+                        when media_source = 'af_app_invites' then 'raja_invites'
+                        when media_source = 'shkyad_int' then 'shkyad_int'
+                        when media_source = 'adxmiagency' then 'adxmiagency'
+                        when media_source = 'appnext_int' then 'appnext_int'
+                        when media_source = 'unityads_int' then 'unityads_int'
+                        when media_source = 'yahoogemini_int' then 'yahoogemini_int'
                         end as utm_source
                         , if(country_code = 'UK', 'GB', country_code) as geo
                         , case
@@ -196,6 +212,14 @@ join
                         when media_source = 'aggrex_int' then 'aggrex_int'
                         when media_source = 'kreditmart_int' then 'kreditmart_int'
                         when media_source = 'qreditku_int' then 'qreditku_int'
+                        when media_source = 'heiner_int' then 'heiner_int'
+                        when media_source = 'newsinpalm_int' then 'newsinpalm'
+                        when media_source = 'af_app_invites' then 'raja_invites'
+                        when media_source = 'shkyad_int' then 'shkyad_int'
+                        when media_source = 'adxmiagency' then 'adxmi'
+                        when media_source = 'appnext_int' then 'Appnext'
+                        when media_source = 'unityads_int' then 'Unity'
+                        when media_source = 'yahoogemini_int' then 'yahoo'
                         end as utm_type
                         , app_id as package_name
                         , if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id)) as gaid
@@ -205,7 +229,8 @@ join
                         (advertising_id is not null and advertising_id <> '' and advertising_id <> 'null' and advertising_id <> 'NULL') or
                         (idfv is not null and idfv <> '' and idfv <> 'null' and idfv <> 'NULL')
                         )
-                        and media_source in ('Facebook Ads', 'avazu_datacenter', 'googleadwords_int', 'cashcash_int','superads_int','rupiahkilat','Pinjamall', 'paydayloans', 'aggrex_int', 'kreditmart_int', 'qreditku_int')
+                        and media_source in ('Facebook Ads', 'avazu_datacenter', 'googleadwords_int', 'cashcash_int','superads_int','rupiahkilat','Pinjamall', 'paydayloans'
+                            , 'aggrex_int', 'kreditmart_int', 'qreditku_int','heiner_int','newsinpalm', 'af_app_invites', 'shkyad_int','adxmiagency','appnext_int','unityads_int','yahoogemini_int')
                         group by substr(pt,1,10), media_source, country_code, app_id, if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id)), if(media_source = 'googleadwords_int', campaign, '')
                     ) x
                 ) a
@@ -305,6 +330,14 @@ join
                  when media_source = 'aggrex_int' then 'aggrex_int'
                  when media_source = 'kreditmart_int' then 'kreditmart_int'
                  when media_source = 'qreditku_int' then 'qreditku_int'
+                 when media_source = 'heiner_int' then 'heiner_int'
+                 when media_source = 'newsinpalm_int' then 'newsinpalm'
+                 when media_source = 'af_app_invites' then 'raja_invites'
+                 when media_source = 'shkyad_int' then 'shkyad_int'
+                 when media_source = 'adxmiagency' then 'adxmi'
+                 when media_source = 'appnext_int' then 'Appnext'
+                 when media_source = 'unityads_int' then 'Unity'
+                 when media_source = 'yahoogemini_int' then 'yahoo'
                  else 'Organic'
                end as utm_type
             , cast(datediff(active_time, create_at) as bigint) as type
@@ -349,6 +382,14 @@ join
                  when media_source = 'aggrex_int' then 'aggrex_int'
                  when media_source = 'kreditmart_int' then 'kreditmart_int'
                  when media_source = 'qreditku_int' then 'qreditku_int'
+                 when media_source = 'heiner_int' then 'heiner_int'
+                 when media_source = 'newsinpalm_int' then 'newsinpalm'
+                 when media_source = 'af_app_invites' then 'raja_invites'
+                 when media_source = 'shkyad_int' then 'shkyad_int'
+                 when media_source = 'adxmiagency' then 'adxmi'
+                 when media_source = 'appnext_int' then 'Appnext'
+                 when media_source = 'unityads_int' then 'Unity'
+                 when media_source = 'yahoogemini_int' then 'yahoo'
                  else 'Organic'
                end as utm_type
             , datediff(active_time, create_at) as ac_cr_diff
