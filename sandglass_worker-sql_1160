@@ -20,45 +20,44 @@ select 'date',
 'Pre_installing_revenue'
  from avazu.t_header;
 
-SELECT
-        a.pt
-      , a.adid
-      , a.sourceid
-      , a.country
-      , sum(if(a.preclk=0,1,0))
-      , sum(if(a.preclk=1,1,0))
-      , sum(if(a.preclk=2,1,0))
-      , sum(if(a.preclk=3,1,0))
-      , sum(if(a.preclk=4,1,0))
+SELECT /*+ MAPJOIN(x1)*/
+        '${hiveconf:pt}'
+      , x2.adid
+      , x2.sourceid
+      , x2.country
+      , sum(if(x2.b_preclk=0,1,0))
+      , sum(if(x2.b_preclk=1,1,0))
+      , sum(if(x2.b_preclk=2,1,0))
+      , sum(if(x2.b_preclk=3,1,0))
+      , sum(if(x2.b_preclk=4,1,0))
 
-      , sum(if(a.preclk=0,b.advpayout,0))
-      , sum(if(a.preclk=1,b.advpayout,0))
-      , sum(if(a.preclk=2,b.advpayout,0))
-      , sum(if(a.preclk=3,b.advpayout,0))
-      , sum(if(a.preclk=4,b.advpayout,0))
-FROM
-    (SELECT
-        pt
-      , adid
-      , sourceid
-      , country
-      , preclk
-    FROM t_appwall_preclick_detail_log
-    where pt='${hiveconf:pt}'
-    ) as a
-    join
-    (SELECT
-        pt
-      , adid
-      , sourceid
-      , country
-      , advpayout
-    FROM t_apx_convert_detail_log
-    where pt='${hiveconf:pt}'
-    ) as b
-    on  a.adid = b.adid and a.sourceid = b.sourceid and a.country = b.country
-    GROUP BY
-        a.pt
-      , a.adid
-      , a.sourceid
-      , a.country;
+      , sum(if(x2.b_preclk=0,x2.advpayout,0))
+      , sum(if(x2.b_preclk=1,x2.advpayout,0))
+      , sum(if(x2.b_preclk=2,x2.advpayout,0))
+      , sum(if(x2.b_preclk=3,x2.advpayout,0))
+      , sum(if(x2.b_preclk=4,x2.advpayout,0))
+
+      , sum(if(x2.a_preclk=4,1,0))
+      , sum(if(x2.a_preclk=5,1,0))
+      , sum(if(x2.b_preclk=5,1,0))
+      , sum(if(x2.b_preclk=5,x2.advpayout,0))
+from
+(
+  select /*+ MAPJOIN(a)*/ a.adid as adid, a.sourceid as sourceid, a.country as country
+  from
+  (select adid,sourceid,country from t_apx_convert_detail_log where pt='${hiveconf:pt}')a
+  join
+  (select adid,sourceid,country from t_appwall_preclick_detail_log where pt='${hiveconf:pt}')b
+  on a.adid = b.adid and a.sourceid = b.sourceid and a.country = b.country
+  GROUP BY a.adid, a.sourceid, a.country
+)x1
+left join
+(
+  select adid,sourceid,country,preclk as a_preclk,-1 as b_preclk,0 as advpayout
+  FROM t_appwall_preclick_detail_log where pt='${hiveconf:pt}'
+  union all
+  select adid,sourceid,country,-1 as a_preclk,preclk as b_preclk,advpayout as advpayout
+  FROM t_apx_convert_detail_log where pt='${hiveconf:pt}'
+)x2
+on x1.adid=x2.adid and x1.sourceid=x2.sourceid and x1.country=x2.country
+GROUP BY x2.adid,x2.sourceid,x2.country;
