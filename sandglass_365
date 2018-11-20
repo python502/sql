@@ -1,0 +1,198 @@
+create temporary function getGeo            as 'com.avazu.dc.hive.udf.UDFGetGeo';
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+set dt=<?=date('Ymd',   $worker_pt);?>;
+set ct=<?=date('Y-m-d', $worker_pt - 60*86400);?>;
+
+use avazurepttmp;
+
+create table if not exists bdp_app_promotion_payout_daily
+(
+    date_time     string,
+    package_name  string,
+    app           string,
+    utm_type      string,
+    utm_source    string,
+    pub_id        string,
+    tier          string,
+    geo           string,
+    dnu           bigint,
+    unit_price    double,
+    campaign_id   string,
+    cost          double
+) partitioned by(pt string)
+STORED AS ORC;
+
+
+drop view if exists bdp_app_promotion_payout_daily_tmp_${hiveconf:dt};
+create view if not exists bdp_app_promotion_payout_daily_tmp_${hiveconf:dt}
+as
+select c.package_name as package_name, app, utm_type, utm_source, pub_id, geo, count(distinct gaid) as dnu
+from
+(
+    select if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.package_name, b.package_name) as package_name
+         , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.utm_source, b.utm_source)     as utm_source
+         , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.pub_id, b.pub_id)             as pub_id
+         , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.geo, b.geo)                   as geo
+         , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.utm_type, b.utm_type)         as utm_type
+         , if(a.gaid <> '' and a.gaid is not null and a.gaid <> 'NULL' and a.gaid <> 'null', a.gaid, b.gaid)     as gaid
+    from
+    (
+        select utm_source, pub_id, if(utm_source = 'avazu_int' and y.gaid is not null, y.geo, x.geo) as geo
+             , utm_type, x.package_name as package_name, x.gaid as gaid
+        from
+        (
+            select utm_source, pub_id, geo, utm_type, z.package_name, gaid
+            from
+            (
+                select case
+                          when media_source = 'Facebook Ads' then 'facebook'
+                          when media_source = 'avazu_datacenter' then 'APX'
+                          when media_source = 'googleadwords_int' then 'adwords_int'
+                          when media_source = 'cashcash_int' then 'cashcash_int'
+                          when media_source = 'superads_int' then 'superads'
+                          when media_source = 'rupiahkilat' then 'rupiahkilat'
+                          when media_source = 'Pinjamall' then 'Pinjamall'
+                          when media_source = 'paydayloans' then 'paydayloans'
+                          when media_source = 'aggrex_int' then 'aggrex_int'
+                          when media_source = 'kreditmart_int' then 'kreditmart_int'
+                          when media_source = 'qreditku_int' then 'qreditku_int'
+                          when media_source = 'heiner_int' then 'heiner_int'
+                          when media_source = 'newsinpalm_int' then 'newsinpalm'
+                          when media_source = 'af_app_invites' then 'raja_invites'
+                          when media_source = 'shkyad_int' then 'shkyad_int'
+                          when media_source = 'adxmiagency' then 'adxmiagency'
+                          when media_source = 'appnext_int' then 'appnext_int'
+                          when media_source = 'unityads_int' then 'unityads_int'
+                          when media_source = 'yahoogemini_int' then 'yahoogemini_int'
+                        end as utm_source
+                     , if(media_source = 'googleadwords_int', campaign, '') as pub_id
+                     , if(country_code = 'UK', 'GB', country_code)          as geo
+                     , case
+                         when media_source = 'Facebook Ads' then 'FB'
+                         when media_source = 'avazu_datacenter' then 'APX'
+                         when media_source = 'googleadwords_int' then 'ADW'
+                         when media_source = 'cashcash_int' then 'cashcash'
+                         when media_source = 'superads_int' then 'superads'
+                         when media_source = 'rupiahkilat' then 'rupiahkilat'
+                         when media_source = 'Pinjamall' then 'Pinjamall'
+                         when media_source = 'paydayloans' then 'paydayloans'
+                         when media_source = 'aggrex_int' then 'aggrex_int'
+                         when media_source = 'kreditmart_int' then 'kreditmart_int'
+                         when media_source = 'qreditku_int' then 'qreditku_int'
+                         when media_source = 'newsinpalm_int' then 'newsinpalm'
+                         when media_source = 'af_app_invites' then 'raja_invites'
+                         when media_source = 'shkyad_int' then 'shkyad_int'
+                         when media_source = 'adxmiagency' then 'adxmi'
+                         when media_source = 'appnext_int' then 'Appnext'
+                         when media_source = 'unityads_int' then 'Unity'
+                         when media_source = 'yahoogemini_int' then 'yahoo'
+                       end                         as utm_type
+                     , app_id                      as package_name
+                     , if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id)) as gaid
+                from avazu.t_app_tracking_appsflyer_android_log
+                where pt like '${hiveconf:pt}%'  and event_type = 'install'
+                    and (
+                            (advertising_id is not null and advertising_id <> '' and advertising_id <> 'null' and advertising_id <> 'NULL') or
+                            (idfv is not null and idfv <> '' and idfv <> 'null' and idfv <> 'NULL')
+                        )
+                    and media_source in ('Facebook Ads', 'avazu_datacenter', 'googleadwords_int', 'cashcash_int','superads_int','rupiahkilat','Pinjamall', 'paydayloans', 'aggrex_int', 'kreditmart_int', 'qreditku_int'
+                        , 'heiner_int', 'newsinpalm', 'af_app_invites', 'shkyad_int','adxmiagency','appnext_int','unityads_int','yahoogemini_int')
+                group by media_source, country_code, app_id, if(platform = 'android', lower(advertising_id), if(platform = 'ios', lower(idfv), customer_user_id))
+                      , if(media_source = 'googleadwords_int', campaign, '')
+            ) x
+            left join
+            (
+                select package_name, cost_app as app, app_id from avazu.t_app_pkg2app_dim where package_name <> 'package_name' and app <> 'skin'
+            )z
+            on (x.package_name = z.app_id)
+        )x
+        left join
+        (
+            select package_name, geo, gaid
+            from avazurepttmp.t_app_user_active_gaid_v2_tmp
+            where pt = '${hiveconf:pt}' and data_time = '${hiveconf:pt}' and create_at = '${hiveconf:pt}'
+            group by package_name, geo, gaid
+        ) y
+        on(x.package_name = y.package_name and x.gaid = y.gaid)
+    ) a
+    full outer join
+    (
+        select utm_source
+             , pub_id
+             , geo
+             , 'ADW' as utm_type
+             , package_name
+             , gaid
+        from avazurepttmp.t_app_user_active_gaid_v2_tmp
+        where pt = '${hiveconf:pt}' and data_time = '${hiveconf:pt}' and create_at = '${hiveconf:pt}'
+            and utm_source in ('avazu_int', 'eptonic_int', 'avazu', 'eptonic') and traffic_id like '%utm_source=%'
+        group by utm_source, pub_id, geo, package_name, gaid
+    ) b
+    on(a.package_name = b.package_name and a.gaid = b.gaid and a.utm_type = b.utm_type)
+) c
+join
+(
+    select package_name, cost_app as app from avazu.t_app_pkg2app_dim where package_name <> 'package_name' and app <> 'skin'
+) d
+on (c.package_name = d.package_name)
+group by c.package_name, app, utm_type, utm_source, pub_id, geo;
+
+
+insert overwrite table bdp_app_promotion_payout_daily partition (pt = '${hiveconf:pt}')
+select '${hiveconf:pt} 00:00:00'                  as date_time
+    ,  a.package_name                             as package_name
+    ,  a.app                                      as app
+    ,  a.utm_type                                 as utm_type
+    ,  a.utm_source                               as utm_source
+    ,  a.pub_id                                   as pub_id
+    ,case
+     when (b.utm_type is not null and b.app is not null and b.geo is not null) then b.tier
+     when (c.utm_type is not null and c.app is not null) then c.tier
+     else ''
+    end as tier
+    ,  a.geo                                      as geo
+    ,  a.dnu                                      as dnu
+    ,case
+      when (b.utm_type is not null and b.app is not null and b.geo is not null) then COALESCE(cast(b.payout as double), 0.0)
+      when (c.utm_type is not null and c.app is not null) then COALESCE(cast(c.payout as double), 0.0)
+      else 0.0
+      end as unit_price
+    , '' as campaign_id
+    , '' as cost
+from
+(
+    select package_name, app, utm_type, utm_source, pub_id, geo, dnu
+    from bdp_app_promotion_payout_daily_tmp_${hiveconf:dt}
+) a
+left join
+(
+    select pt, app, utm_type, geo, tier, payout
+    from avazurepttmp.dotc_payout_info_dim
+    where pt='${hiveconf:pt}' and geo!='GLOBAL'
+) b
+on(a.utm_type = b.utm_type and a.app = b.app and a.geo = b.geo)
+left join
+(
+    select pt, app, utm_type, geo, tier, payout
+     from avazurepttmp.dotc_payout_info_dim
+    where pt='${hiveconf:pt}' and geo='GLOBAL'
+) c
+on(a.utm_type = c.utm_type and a.app = c.app);
+
+drop view  if exists bdp_app_promotion_payout_daily_tmp_${hiveconf:dt};
+alter table bdp_app_promotion_payout_daily drop partition (pt='${hiveconf:ct}');
+
+select "pt" as date_time
+    ,  "package_name" as package_name
+    ,  "app"          as app
+    ,  "utm_type"     as utm_type
+    ,  "utm_source"   as utm_source
+    ,  "pub_id"       as pub_id
+    ,  "tier"         as tier
+    ,  "geo"          as geo
+    ,  "install"      as install
+    ,  "unit_price"   as unit_price
+from avazu.t_header limit 1;
+
+select date_time, package_name, app, utm_type, utm_source, pub_id, tier, geo, dnu, unit_price
+from bdp_app_promotion_payout_daily where pt = '${hiveconf:pt}';
