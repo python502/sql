@@ -1,0 +1,138 @@
+set hive.execution.engine=mr;
+set mapreduce.reduce.shuffle.input.buffer.percent=0.6;
+use avazurept;
+set pt=<?=date('Y-m-d', $worker_pt);?>;
+set bt=<?=date('Y-m-d', $worker_pt-86400*7);?>;
+
+drop table if exists apx_core_index_rank;
+create table if not exists apx_core_index_rank
+(
+   adid                  string
+  ,geo                   string
+  ,pkg_name              string
+  ,clicks                bigint
+  ,conv                  bigint
+  ,cr                    int
+  ,payout                bigint
+  ,ecpc                  bigint
+  ,revenue               bigint
+  ,profit                bigint
+  ,margin                string
+  ,core_index_geo        int
+  ,core_index_pkgname    int
+)
+PARTITIONED BY(pt string)
+stored AS orc;
+
+
+insert overwrite table apx_core_index_rank partition(pt = '${hiveconf:pt}')
+select adid
+      ,geo
+      ,pkg_name
+      ,clicks
+      ,conv
+      ,cr
+      ,payout
+      ,ecpc
+      ,revenue
+      ,profit
+      ,margin
+      ,core_index_geo
+      ,core_index_pkgname
+from(
+    select adid
+          ,geo
+          ,clicks
+          ,conv
+          ,cr
+          ,payout
+          ,ecpc
+          ,pkg_name
+          ,revenue
+          ,profit
+          ,margin
+          ,if(conversion_rank<=(ad_count_geo+1)/2,1,0)+if(cr_rank<=(ad_count_geo+1)/2,1,0)+if(payout_rank<=(ad_count_geo+1)/2,1,0)+if(ecpc_rank<=(ad_count_geo+1)/2,1,0)+if(revenue_rank<=(ad_count_geo+1)/2,1,0) as core_index_geo
+          ,if(conversion_rank_pkg<=(ad_count_pkgname+1)/2,1,0)+if(cr_rank_pkg<=(ad_count_pkgname+1)/2,1,0)+if(payout_rank_pkg<=(ad_count_pkgname+1)/2,1,0)+if(ecpc_rank_pkg<=(ad_count_pkgname+1)/2,1,0)+if(revenue_rank_pkg<=(ad_count_pkgname+1)/2,1,0) as core_index_pkgname
+    from(
+        select adid
+              ,geo
+              ,rank()over (partition by pkg_name,geo order by conv desc)      as   conversion_rank
+              ,rank()over (partition by pkg_name,geo order by cr)             as   cr_rank
+              ,rank()over (partition by pkg_name,geo order by payout desc)    as   payout_rank
+              ,rank()over (partition by pkg_name,geo order by ecpc desc)      as   ecpc_rank
+              ,rank()over (partition by pkg_name,geo order by revenue desc)   as   revenue_rank
+              ,rank()over (partition by pkg_name order by conv desc)      as   conversion_rank_pkg
+              ,rank()over (partition by pkg_name order by cr)             as   cr_rank_pkg
+              ,rank()over (partition by pkg_name order by payout desc)    as   payout_rank_pkg
+              ,rank()over (partition by pkg_name order by ecpc desc)      as   ecpc_rank_pkg
+              ,rank()over (partition by pkg_name order by revenue desc)   as   revenue_rank_pkg
+              ,clicks
+              ,conv
+              ,revenue
+              ,cr
+              ,payout
+              ,ecpc
+              ,profit
+              ,margin
+              ,pkg_name
+              ,count(*) over (partition by pkg_name,geo ) as ad_count_geo
+              ,count(*) over (partition by pkg_name )    as ad_count_pkgname
+        from
+        (select adid
+               ,geo
+               ,clicks
+               ,conv
+               ,revenue
+               ,cr
+               ,payout
+               ,ecpc
+               ,profit
+               ,margin
+               ,pkg_name
+        from
+            (select adid
+                   ,geo
+                   ,rank() over (partition by pkg_name,geo order by payout  desc) as payout_rank
+                   ,rank() over (partition by pkg_name,geo order by revenue desc) as revenue_rank
+                   ,clicks
+                   ,conv
+                   ,revenue
+                   ,cr
+                   ,payout
+                   ,ecpc
+                   ,profit
+                   ,margin
+                   ,pkg_name
+            from
+                (select  adid
+                        ,geo
+                        ,sum(clicks) as clicks
+                        ,sum(conv)   as conv
+                        ,sum(sum_advpayout*10000) as revenue
+                        ,sum(conv)/sum(clicks) as cr
+                        ,sum(sum_ud_payout*10000)/sum(conv) as payout
+                        ,sum(sum_advpayout*10000)/sum(clicks) as ecpc
+                        ,sum(sum_advpayout*10000)-sum(sum_ud_payout*10000) as profit
+                        ,sum(sum_advpayout*10000-sum_ud_payout*10000)/sum(sum_advpayout*10000) as margin
+                        ,pkg_name
+                from  avazurepttmp.apx_geo_source_daily a
+                join (select adsid,pkgname as pkg_name from avazurept.t_apx_ads_info_dim where pt='${hiveconf:pt}') b
+                on (a.adid=b.adsid)
+                where pt between '${hiveconf:bt}' and '${hiveconf:pt}'
+                group by  adid
+                         ,geo
+                         ,pkg_name) as x
+                ) as xx
+            where payout_rank<=25 and revenue_rank<=25 ) as xxx
+            group by  adid
+                     ,pkg_name
+                     ,geo
+                     ,clicks
+                     ,conv
+                     ,revenue
+                     ,cr
+                     ,payout
+                     ,ecpc
+                     ,profit
+                     ,margin ) as xxxx) as xxxxx;
+
