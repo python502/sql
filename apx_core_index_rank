@@ -115,10 +115,9 @@ from(
                         ,sum(sum_advpayout*10000)-sum(sum_ud_payout*10000) as profit
                         ,sum(sum_advpayout*10000-sum_ud_payout*10000)/sum(sum_advpayout*10000) as margin
                         ,pkg_name
-                from  avazurepttmp.apx_geo_source_daily a
+                from  (select adid from avazurepttmp.apx_geo_source_daily where pt between '${hiveconf:bt}' and '${hiveconf:pt}')a
                 join (select adsid,pkgname as pkg_name from avazurept.t_apx_ads_info_dim where pt='${hiveconf:pt}') b
                 on (a.adid=b.adsid)
-                where pt between '${hiveconf:bt}' and '${hiveconf:pt}'
                 group by  adid
                          ,geo
                          ,pkg_name) as x
