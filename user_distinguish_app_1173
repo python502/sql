@@ -160,7 +160,11 @@ join
     (
         select aa.pt as pt,aa.package_name as package_name,aa.geo as geo, aa.utm_type as utm_type
         ,if(aa.dnu is not null,aa.dnu,0) as install
-        ,if(bb.payout is not null,bb.payout,0) as unit_price
+        ,case
+             when (bb.utm_type is not null and bb.app is not null and bb.geo is not null) then COALESCE(cast(cast(bb.payout as double)*100 as bigint), 0)
+             when (cc.utm_type is not null and cc.app is not null) then COALESCE(cast(cast(cc.payout as double)*100 as bigint), 0)
+             else 0
+          end as unit_price
         from
         (
             select c.pt as pt, c.package_name as package_name, app, utm_type, utm_source, geo, count(distinct gaid) as dnu
@@ -258,38 +262,18 @@ join
         )aa
         left join
         (
-            select x.data_time as data_time, app, utm_type, tier, payout, trim(geo_new)  as geo
-            from (
-                select b.data_time as data_time, app, utm_type, tier, geo, payout
-                from
-                (
-                    select pt, begin_date, app, utm_type, tier, geo, COALESCE(cast(cast(payout as double)*100 as bigint), 0) as payout
-                    from avazu.app_promotion_payout_dim
-                    where app <> 'app'
-                ) a
-                join
-                (
-                    select '${hiveconf:pt}' as data_time, max(pt) as pt
-                    from avazu.app_promotion_payout_dim
-                    where pt <= '${hiveconf:pt}'
-                    union all
-                    select '${hiveconf:one}' as data_time, max(pt) as pt
-                    from avazu.app_promotion_payout_dim
-                    where pt <= '${hiveconf:one}'
-                    union all
-                    select '${hiveconf:two}' as data_time, max(pt) as pt
-                    from avazu.app_promotion_payout_dim
-                    where pt <= '${hiveconf:two}'
-                    union all
-                    select '${hiveconf:thr}' as data_time, max(pt) as pt
-                    from avazu.app_promotion_payout_dim
-                    where pt <= '${hiveconf:thr}'
-                ) b
-                on(a.pt = b.pt)
-             )x
-             lateral view explode(split(geo, ',')) t as geo_new
+            select pt, app, utm_type, geo, payout
+            from avazurepttmp.dotc_payout_info_dim
+            where pt BETWEEN '${hiveconf:thr}' AND '${hiveconf:pt}' and geo!='GLOBAL'
         )bb
-        on(aa.pt=bb.data_time and aa.utm_type = bb.utm_type and aa.app = bb.app and aa.geo=bb.geo)
+        on(aa.pt=bb.pt and aa.utm_type = bb.utm_type and aa.app = bb.app and aa.geo=bb.geo)
+        left join
+        (
+            select pt, app, utm_type, geo, payout
+            from avazurepttmp.dotc_payout_info_dim
+            where pt BETWEEN '${hiveconf:thr}' AND '${hiveconf:pt}' and geo='GLOBAL'
+        )cc
+        on(aa.pt=cc.pt and aa.utm_type = cc.utm_type and aa.app = cc.app)
    ) x2
     group by x2.pt, x2.package_name, x2.geo, x2.utm_type
 
