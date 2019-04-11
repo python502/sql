@@ -43,6 +43,7 @@ left join
 (
   select id,style_name as gift_name from ulive_gift_info where pt = '${hiveconf:pt}'
 ) c
+on a.gift_id=c.id
 left join
 (
   select id,geo from ulive_member_alive_detail where pt = '${hiveconf:pt}'
