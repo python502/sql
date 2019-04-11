@@ -38,7 +38,7 @@ SELECT x.member_id as id
 FROM
 (
   select if(a.member_id is not null, a.member_id, b.id) as member_id
-  ,substr(a.active_time,1,10) as active_at
+  ,'${hiveconf:pt}' as active_at
   ,a.active_time as active_time
   ,if(b.id is not null, b.live_counts, 0) as live_counts
   ,if(b.id is not null, b.live_times, 0) as live_times
