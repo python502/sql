@@ -28,7 +28,7 @@ from
   select /*+ MAPJOIN(b)*/ a.id, a.create_at,a.create_time,b.abbreviation as geo
   from
   (
-    select id, pt as create_at, fromUnixTimestamp(cast(create_time as bigint), 'yyyy-MM-dd HH:mm:ss') as create_time, language from ulive_member where pt = '${hiveconf:pt}'
+    select id, fromUnixTimestamp(cast(create_time as bigint), 'yyyy-MM-dd') as create_at, fromUnixTimestamp(cast(create_time as bigint), 'yyyy-MM-dd HH:mm:ss') as create_time, language from ulive_member where pt = '${hiveconf:pt}'
   ) a
   left join
   (
