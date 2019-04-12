@@ -52,12 +52,12 @@ FROM
     from
     (
         -- 用户日活表数据
-      select member_id, fromUnixTimestamp(cast(max(create_time) as bigint), 'yyyy-MM-dd hh:mm:ss') as active_time from ulive_member_alive_record where pt = '${hiveconf:pt}' group by member_id
+      select member_id, fromUnixTimestamp(cast(max(create_time) as bigint), 'yyyy-MM-dd HH:mm:ss') as active_time from ulive_member_alive_record where pt = '${hiveconf:pt}' group by member_id
     ) as x
     FULL OUTER JOIN
     (
         -- 用户新增表数据
-      select id, fromUnixTimestamp(cast(create_time as bigint), 'yyyy-MM-dd hh:mm:ss') as active_time from ulive_member where pt = '${hiveconf:pt}'
+      select id, fromUnixTimestamp(cast(create_time as bigint), 'yyyy-MM-dd HH:mm:ss') as active_time from ulive_member where pt = '${hiveconf:pt}'
     ) as y
     on x.member_id = y.id
   ) a
