@@ -8,6 +8,7 @@ select 'pt'          as pt
      , 'id'           as id
      , 'member_id'    as member_id
      , 'geo'          as geo
+     , 'registered_at' as registered_at
      , 'pay_type'     as pay_type
      , 'order_no'     as order_no
      , 'buy_amount'   as buy_amount
@@ -16,10 +17,11 @@ select 'pt'          as pt
      , 'status'       as status
 from avazu.t_header limit 1;
 
-select /*+ MAPJOIN(b)*/ concat('${hiveconf:pt}',' 00:00:00')
+select concat('${hiveconf:pt}',' 00:00:00')
 ,a.id as id
 ,a.member_id as member_id
-,b.abbreviation as geo
+,b.geo as geo
+,b.create_at as registered_at
 ,a.pay_type as pay_type
 ,a.order_no as order_no
 ,a.buy_amount as buy_amount
@@ -28,10 +30,10 @@ select /*+ MAPJOIN(b)*/ concat('${hiveconf:pt}',' 00:00:00')
 ,a.status as status
 from
 (
-  select id, member_id, pay_type ,order_no ,buy_amount ,money ,create_time,status,language from ulive_member_charge where pt = '${hiveconf:pt}'
+  select id, member_id, pay_type ,order_no ,buy_amount ,money ,create_time,status from ulive_member_charge where pt = '${hiveconf:pt}'
 ) a
 left join
 (
-  select language,abbreviation from ulive_country where pt = '${hiveconf:pt}'
+  select id,geo,create_at from ulive_member_alive_detail where pt = '${hiveconf:pt}'
 ) b
-on a.language=b.language
+on a.member_id=b.id

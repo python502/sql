@@ -16,9 +16,10 @@ select 'pt'                       as pt
      , 'cost_diamond_amount'       as cost_diamond_amount
      , 'create_time'               as create_time
      , 'receive_member_geo'        as receive_member_geo
+     , 'registered_time'             as registered_time
 from avazu.t_header limit 1;
 
-select /*+ MAPJOIN(b)*/ concat('${hiveconf:pt}',' 00:00:00')
+select concat('${hiveconf:pt}',' 00:00:00')
 ,a.id as id
 ,a.give_member_id as give_member_id
 ,b.abbreviation as geo
@@ -30,6 +31,7 @@ select /*+ MAPJOIN(b)*/ concat('${hiveconf:pt}',' 00:00:00')
 ,a.cost_diamond_amount as cost_diamond_amount
 ,a.create_time as create_time
 ,d.geo as receive_member_geo
+,d.create_at as registered_at
 from
 (
   select id, give_member_id, receive_member_id ,gift_id ,gift_name ,give_amount ,gain_gold_amount, cost_diamond_amount, create_time,language from ulive_gift_give_info where pt = '${hiveconf:pt}'
@@ -46,6 +48,6 @@ left join
 on a.gift_id=c.id
 left join
 (
-  select id,geo from ulive_member_alive_detail where pt = '${hiveconf:pt}'
+  select id,geo,create_at from ulive_member_alive_detail where pt = '${hiveconf:pt}'
 ) d
 on a.receive_member_id=d.id
